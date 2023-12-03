@@ -1,0 +1,22 @@
+//Energema - MicroASE Generic Server
+
+effect IsServerStopped: unit -> bool
+effect StopServer: unit -> unit
+
+let serverHandler = handler {
+    effect IsServerStopped _ k => {
+        k (perform serverState.Get ())
+    }
+    effect StopServer _ k => {
+        perform serverState.Set true;
+        k ()
+    }
+}
+
+fn installServerHandler function {
+    with namedStateHandler false {serverState} handle {
+        with serverHandler handle {
+            function ()
+        }
+    }
+}

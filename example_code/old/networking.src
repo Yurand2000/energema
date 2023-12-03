@@ -1,0 +1,67 @@
+//Energema - Networking Handlers
+
+effect FindService: string -> address
+effect Accept: unit -> (string, address)
+effect CanReceive : address -> bool
+effect Receive : address -> (op_code, string)
+effect SendRequest : (string, address) -> unit
+effect SendResponse : (op_code, string, address) -> Unit
+
+use unsafe_network_functions.src
+
+let networkHandler = handler {
+    effect Accept _ k => {
+        unsafe {
+            k (accept_connection ())
+        }
+    },
+    effect Receive address k => {
+        unsafe {
+            k (blocking_receive address)
+        }
+    },
+    effect CanReceive address k => {
+        unsafe {
+            k (can_receive address)
+        }
+    },
+    effect SendRequest (data, address) k => {
+        unsafe {
+            send_request data address;
+        }
+        k ()
+    },
+    effect SendResponse (op_code, data, address) k => {
+        unsafe {
+            send_response op_code data address;
+        }
+        k ()
+    },
+}
+
+let nonBlockingNetworkHandler = handler {
+    effect Receive address k => {
+        fn non_blocking_receive () {
+            if perform CanReceive {
+                k (perform Receive address)
+            } else {
+                perform Yield;
+                non_blocking_receive ()
+            }
+        } ()
+    },
+}
+
+fn handleBlocking function {
+    with networkHandler handle {
+        function ()
+    }
+}
+
+fn handleNonBlocking function {
+    with networkHandler handle {
+        with nonBlockingNetworkHandler handle {
+            function ()
+        }
+    }
+}

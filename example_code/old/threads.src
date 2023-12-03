@@ -1,0 +1,47 @@
+//Energema - Threading Support
+
+use state.src
+
+effect Yield : unit -> unit
+effect Spawn : (unit -> unit!{Spawn, Yield}) -> unit
+
+fn push_in_queue function {
+    let state = perform threadQueue.Get ();
+    let new_state = reverse( Cons(function, reverse(state)) );
+    perform threadQueue.Set new_state;
+}
+
+fn pop_and_execute () {
+    let state = perform threadQueue.Get ();
+    match state {
+        EmptyList => {
+            ()
+        },
+        Cons(head, tail) => {
+            perform threadQueue.Set tail;
+            head ()
+        }
+    }
+}
+
+let threadHandler = handler {
+    return _ => { pop_and_execute () },
+    effect Yield () k => {
+        push_in_queue k;
+        pop_and_execute ()
+    },
+    effect Spawn function k => {
+        push_in_queue k;
+        with threadHandler handle {
+            function ()
+        }
+    }
+}
+
+fn installThreadHandler function {
+    with namedStateHandler EmptyList {threadQueue} handle {
+        with threadHandler handle {
+            function ()
+        }
+    }
+}

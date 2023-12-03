@@ -1,0 +1,4 @@
+//Energema - Effect Declarations
+
+effect Effect0: i32 -> ();
+effect Effect1: bool, bool -> ();

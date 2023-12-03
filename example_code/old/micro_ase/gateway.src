@@ -1,0 +1,45 @@
+//Energema - MicroASE Gateway
+
+use threads.src
+use networking.src
+use server.src
+
+let ALLOWED_OPERATIONS = ["+", "-", "*", "/", "%"];
+
+//request format: /math/<op>?a=<number>&b=<number>
+fn handleMathRequest(request) {
+    let (request, return_address) := parseMathRequest(request);
+    let (operation, first, second) := request;
+
+    if !contains(ALLOWED_OPERATIONS, operation) {
+        perform SendResponse (404, "Invalid Operation", return_address);
+    } else {
+        let math_service := perform FindService("math");
+        let request_string := operation ++ "?a=" ++ first ++ "&b=" ++ second;
+        perform SendRequest(request_string, math_service);
+        let response := perform Receive(math_service);
+        perform SendResponse(200, response[1], return_address);
+    }
+}
+
+fn serveRequests() {
+    let incoming_request := perform Accept ();
+
+    if isValidRequest(request) {
+        perform Spawn (|request| {
+            handleNonBlocking (|_| { handleMathRequest request })
+        });
+    }
+
+    if !(perform IsServerStopped) {
+        serveRequests()
+    }
+}
+
+fn main() {
+    installThreadHandler (
+        installServerHandler (
+            handleNonBlocking serveRequests
+        )
+    )
+}

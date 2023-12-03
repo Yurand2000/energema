@@ -1,0 +1,26 @@
+//Energema - State Handler
+
+effect Get[T]: unit -> T
+effect Set[T]: T -> unit
+
+let stateHandler initial_state = handler {
+    return y => { fn _ { y } },
+    effect Get _ k => {
+        fn state { (k state) state }
+    },
+    effect Set value k => {
+        fn _ { (k ()) value }
+    },
+    finally f => { f initial_state }
+}
+
+let namedStateHandler initial_state state_name = handler {
+    return y => { fn _ { y } },
+    effect {state_name}.Get _ k => {
+        fn state { (k state) state }
+    },
+    effect {state_name}.Set value k => {
+        fn _ { (k ()) value }
+    },
+    finally f => { f initial_state }
+}

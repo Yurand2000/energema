@@ -1,0 +1,13 @@
+//Energema - Hello World!
+
+effect print: bool -> ()
+
+handler defaultHandler() {
+    print(value) { nativePrint(value) }
+}
+
+fn main() {
+    with defaultHandler() {
+        perform print(true)
+    }
+}

@@ -1,0 +1,75 @@
+//Energema - Worksteal Threading
+
+use state.src
+
+effect Yield : unit -> unit
+effect Spawn : (unit -> unit!{Spawn, Yield}) -> unit
+effect IsStopped: unit -> bool
+effect Stop: unit -> unit
+
+fn push_in_queue queue_id function {
+    let state = perform threadQueues.Get queue_id;
+    let new_state = reverse( Cons(function, reverse(state)) );
+    perform threadQueues.SetNth queue_id new_state;
+}
+
+fn pop_and_execute num_threads queue_id {
+    if perform IsStopped {
+        ()
+    } else {
+        let state = perform threadQueues.GetNth queue_id;
+        match state {
+            EmptyList => {
+                steal_work num_threads num_threads queue_id
+            },
+            Cons(head, tail) => {
+                perform threadQueues.SetNth queue_id tail;
+                head ()
+            }
+        }
+    }
+}
+
+fn steal_work num_threads last_visited self_id {
+    if perform IsStopped {
+        ()
+    } else if last_visited < 0 {
+        unsafe { sleep 1000; };
+        steal_work num_threads num_threads self_id
+    } else {
+        let state = perform threadQueues.GetNth last_visited;
+        match state {
+            EmptyList => {
+                steal_work num_threads (last_visited - 1) self_id
+            },
+            Cons(head, tail) => {
+                perform threadQueues.SetNth last_visited tail;
+                head ()
+            }
+        }
+    }
+}
+
+let threadHandler = handler {
+    return _ => { pop_and_execute () },
+    effect Yield () k => {
+        push_in_queue k;
+        pop_and_execute ()
+    },
+    effect Spawn function k => {
+        push_in_queue k;
+        with threadHandler handle {
+            function ()
+        }
+    }
+}
+
+let threadingSupport = handler {
+    effect IsStopped _ k => {
+        k (perform threadingStop.Get ())
+    }
+    effect Stop _ k => {
+        perform threadingStop.Set true;
+        k ()
+    }
+}

@@ -1,0 +1,8 @@
+//Energema - Function Declarations
+
+fn function0() { () }
+fn function1 (arg1, arg2) { true }
+fn function2 (arg1) { false }
+fn function3() { 53 }
+
+fn function4() { (15 + 58); true }
