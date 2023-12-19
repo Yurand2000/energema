@@ -1,4 +1,4 @@
-use std::{collections::HashSet, hash::Hash};
+use std::{collections::HashSet, hash::Hash, fmt::Display};
 
 mod types;
 mod operators;
@@ -37,6 +37,7 @@ pub enum Expression {
     Let{ id: Identifier, expression: Box<Expression> },
     If{ guard: Box<Expression>, then_b: Box<Expression>, else_b: Box<Expression> },
     While{ guard: Box<Expression>, block: Box<Expression> },
+    ValueCall{ expression: Box<Expression> },
     FunCall{ function: Identifier, arguments: Vec<Expression> },
     EffCall{ effect: Effect, arguments: Vec<Expression> },
     Handling{ handler: Identifier, computation: Box<Expression> },
@@ -45,17 +46,14 @@ pub enum Expression {
     BinaryOp(Box<Expression>, BinaryOp, Box<Expression>),
 }
 
-#[derive(Clone)]
-pub struct NativeFun( pub &'static dyn Fn(Vec<Value>) -> Result<Value, String> );
-
 impl From<&str> for Identifier {
     fn from(value: &str) -> Self {
         Identifier(value.to_owned())
     }
 }
 
-impl std::fmt::Debug for NativeFun {
+impl Display for Identifier {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_tuple("NativeFun").finish()
+        self.0.fmt(f)
     }
 }

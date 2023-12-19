@@ -82,6 +82,7 @@ fn expression_parser_no_sequencing(input: &str) -> IResult<&str, Expression> {
         let_expression,
         if_expression,
         //while expression,
+        value_call_expression,
         function_call_expression,
         effect_call_expression,
         handler_install_expression,        
@@ -121,6 +122,17 @@ fn if_expression(input: &str) -> IResult<&str, Expression> {
     let (out, _) = char('}')(next)?;
 
     Ok((out, Expression::If { guard: Box::new(guard), then_b: Box::new(then_b), else_b: Box::new(else_b) }))
+}
+
+fn value_call_expression(input: &str) -> IResult<&str, Expression> {
+    let (next, _) = space_parser0(input)?;
+    let (next, _) = tag("invoke")(next)?;
+    let (next, _) = space_parser1(next)?;
+    let (next, expr) = expression_parser_no_sequencing(next)?;
+    let (next, _) = char('(')(next)?;
+    let (out, _) = char(')')(next)?;
+
+    Ok((out, Expression::ValueCall { expression: Box::new(expr) }))
 }
 
 fn function_call_expression(input: &str) -> IResult<&str, Expression> {
@@ -217,17 +229,20 @@ fn handler_declaration(input: &str) -> IResult<&str, HandlerDeclaration> {
     //Ok((out, HandlerDeclaration{ name, return_handler, effect_handlers }))
 }
 
-fn return_handler(input: &str) -> IResult<&str, (Type, Type, Box<Expression>)> {
+fn return_handler(input: &str) -> IResult<&str, (Type, Type, Identifier, Box<Expression>)> {
     let (next, _) = space_parser0(input)?;
     let (next, _) = tag("return")(next)?;
     let (next, _) = space_parser1(next)?;
+    let (next, name) = identifier(next)?;
+    let (next, _) = char(':')(next)?;
+    let (next, _) = space_parser0(next)?;
     let (next, in_type) = type_string(next)?;
     let (next, _) = space_parser1(next)?;
     let (next, out_type) = type_string(next)?;
     let (next, _) = space_parser1(next)?;
     let (out, body) = function_body(next)?;
 
-    Ok( (out, (in_type, out_type, Box::new(body))) )
+    Ok( (out, (in_type, out_type, name, Box::new(body))) )
 }
 
 fn effect_handler(input: &str) -> IResult<&str, (Effect, Vec<Identifier>, Box<Expression>)> {
@@ -238,7 +253,6 @@ fn effect_handler(input: &str) -> IResult<&str, (Effect, Vec<Identifier>, Box<Ex
     let (next, arguments) = separated_list0(list_separator, identifier)(next)?;
     let (next, _) = char(')')(next)?;
     let (out, body) = function_body(next)?;
-
     Ok( (out, (effect, arguments, Box::new(body))) )
 }
 

@@ -23,7 +23,7 @@ pub struct FunDeclaration {
 #[derive(PartialEq, Eq)]
 pub struct HandlerDeclaration {
     pub name: Identifier,
-    pub return_handler: Option<(Type, Type, Box<Expression>)>,
+    pub return_handler: Option<(Type, Type, Identifier, Box<Expression>)>,
     pub effect_handlers: Vec<(Effect, Vec<Identifier>, Box<Expression>)>,
 }
 
