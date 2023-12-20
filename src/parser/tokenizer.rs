@@ -11,9 +11,6 @@ use nom_locate::*;
 
 type Span<'a> = LocatedSpan<&'a str>;
 
-use crate::ast::BinaryOp;
-use crate::ast::UnaryOp;
-
 use super::tokens::*;
 use super::utils::*;
 
@@ -52,7 +49,7 @@ fn next_token(input: Span) -> IResult<Span, LocatedToken> {
 fn extract_token(input: Span) -> IResult<Span, Token> {
     alt((
         //unit parser
-        value(Token::UnitLiteral, tag("()")),
+        value(Token::UnitLiteral, tag("unit")),
 
         //bool parser
         value(Token::BoolLiteral(true), tag("true")),
@@ -66,6 +63,9 @@ fn extract_token(input: Span) -> IResult<Span, Token> {
 
         //string parser
         map(parse_string, |value| Token::StringLiteral(value)),
+
+        //symbol parser
+        map(parse_symbol, |value| Token::Symbol(value)),
 
         //keywords
         map(parse_keyword, |value| Token::Keyword(value)),
@@ -83,43 +83,53 @@ fn parse_keyword(input: Span) -> IResult<Span, Keyword> {
         value(Keyword::If, tag("if")),
         value(Keyword::Else, tag("else")),
         value(Keyword::While, tag("while")),
-        map(parse_symbol, |sym| Keyword::Symbol(sym)),
+        value(Keyword::Fn, tag("fn")),
+        value(Keyword::Let, tag("let")),
+        value(Keyword::Perform, tag("perform")),
+        value(Keyword::With, tag("with")),
+        value(Keyword::Handler, tag("handler")),
+        value(Keyword::Effect, tag("effect")),
+        value(Keyword::Return, tag("return")),
     ))(input)
 }
 
 fn parse_symbol(input: Span) -> IResult<Span, Symbol> {
     alt((
-        value(Symbol::OpenParenthesis, char('(')),
-        value(Symbol::CloseParentesis, char('(')),
-        value(Symbol::OpenBracket, char('[')),
-        value(Symbol::CloseBracket, char(']')),
-        value(Symbol::OpenBrace, char('{')),
-        value(Symbol::CloseBrace, char('}')),
-    ))(input)
-}
-
-fn parse_unary_operator(input: Span) -> IResult<Span, UnaryOp> {
-    value(UnaryOp::LNot, tag("!"))(input)
-}
-
-fn parse_binary_operator(input: Span) -> IResult<Span, BinaryOp> {
-    alt((
-        value(BinaryOp::Add, tag("+")),
-        value(BinaryOp::Sub, tag("-")),
-        value(BinaryOp::Mul, tag("*")),
-        value(BinaryOp::Div, tag("/")),
-        value(BinaryOp::Mod, tag("%")),
-
-        value(BinaryOp::LAnd, tag("&&")),
-        value(BinaryOp::LOr, tag("||")),
-        value(BinaryOp::LXor, tag("^^")),
-
-        value(BinaryOp::Eq, tag("==")),
-        value(BinaryOp::Ne, tag("!=")),
-        value(BinaryOp::Le, tag(">=")),
-        value(BinaryOp::Lt, tag("<")),
-        value(BinaryOp::Gt, tag(">")),
-        value(BinaryOp::Ge, tag(">=")),
+        alt((
+            value(Symbol::Arrow, tag("->")),            
+            value(Symbol::LogicalAnd, tag("&&")),
+            value(Symbol::LogicalOr, tag("||")),
+            value(Symbol::LogicalXor, tag("^^")),
+            value(Symbol::DoubleEqual, tag("==")),
+            value(Symbol::NotEqual, tag("!=")),
+            value(Symbol::GreaterOrEqual, tag(">=")),
+            value(Symbol::SmallerOrEqual, tag("<=")),
+        )),
+        alt((
+            value(Symbol::OpenParenthesis, char('(')),
+            value(Symbol::CloseParentesis, char('(')),
+            value(Symbol::OpenBracket, char('[')),
+            value(Symbol::CloseBracket, char(']')),
+            value(Symbol::OpenBrace, char('{')),
+            value(Symbol::CloseBrace, char('}')),
+            value(Symbol::Comma, char(',')),
+            value(Symbol::Semicolon, char(';')),
+            value(Symbol::Colon, char(':')),
+            value(Symbol::Tilde, char('~')),
+        )),
+        alt((
+            value(Symbol::NegatedSet, char('^')),
+            value(Symbol::Exclamation, char('!')),
+            value(Symbol::Plus, char('+')),
+            value(Symbol::Minus, char('-')),
+            value(Symbol::Times, char('*')),
+            value(Symbol::ForwardSlash, char('/')),
+            value(Symbol::Modulo, char('%')),
+            value(Symbol::Pipe, char('|')),
+            value(Symbol::Equal, char('=')),
+            value(Symbol::GreaterThan, char('>')),
+            value(Symbol::SmallerThan, char('<')),
+        )),
     ))(input)
 }
 

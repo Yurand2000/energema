@@ -7,8 +7,9 @@ use nom::*;
 pub enum Token {
     Identifier(String),
     Keyword(Keyword),
-    UnitLiteral,
-    BoolLiteral(bool),
+    Symbol(Symbol),
+    UnitLiteral,            // unit
+    BoolLiteral(bool),      // true | false
     I32Literal(i32),
     RuneLiteral(char),
     StringLiteral(String),
@@ -28,7 +29,6 @@ pub enum Keyword {
     Handler,
     Effect,
     Return,
-    Symbol(Symbol),
 }
 
 #[derive(Clone)]
