@@ -61,6 +61,20 @@ fn test_symbol_extraction() {
     assert_eq!(symbols.parse(skip(eof)), Ok(()));
 }
 
+#[test]
+fn test_space_parser() {    
+    let data = " \t\r\n A //comment here \n\r A /*comment 2 */ A";
+    let mut data = StatefulParser::new(data);
+    
+    assert_eq!(data.parse_no_space(skip(space_parser0)), Ok(()));
+    assert_eq!(data.parse_no_space(skip(char('A'))), Ok(()));
+    assert_eq!(data.parse_no_space(skip(space_parser1)), Ok(()));
+    assert_eq!(data.parse_no_space(skip(char('A'))), Ok(()));
+    assert_eq!(data.parse_no_space(skip(space_parser1)), Ok(()));
+    assert_eq!(data.parse_no_space(skip(char('A'))), Ok(()));
+    assert_eq!(data.parse_no_space(skip(eof)), Ok(()));
+}
+
 struct StatefulParser<'a> {
     span: Span<'a>
 }
@@ -77,6 +91,23 @@ impl<'a> StatefulParser<'a> {
         let result = apply((
             keep(&mut out_data, parser),
             skip(space0),
+        ))(data);
+    
+        match result {
+            Ok((mut span, _)) => {
+                std::mem::swap(&mut self.span, &mut span);
+                Ok(out_data.unwrap())
+            },
+            Err(err) => Err(err.to_string()),
+        }
+    }
+
+    fn parse_no_space<T>(&mut self, parser: impl FnMut(Span<'a>) -> IResult<Span<'a>, T>) -> Result<T, String>
+    {
+        let data = std::mem::replace(&mut self.span, Span::from(""));
+        let mut out_data = None;
+        let result = apply((
+            keep(&mut out_data, parser),
         ))(data);
     
         match result {
