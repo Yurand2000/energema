@@ -73,6 +73,7 @@ pub struct TokenStream<'a, T> {
     stream:  &'a [T]
 }
 
+#[derive(Debug)]
 #[derive(Clone)]
 #[derive(PartialEq, Eq)]
 pub struct LocatedToken {
@@ -82,7 +83,11 @@ pub struct LocatedToken {
 }
 
 impl LocatedToken {
-    pub fn new<'a>(token: Token, position: nom_locate::LocatedSpan<&'a str>) -> Self {
+    pub fn new(token: Token, line: u32, column: u32) -> Self {
+        Self { token, line, column }
+    }
+
+    pub fn from_span<'a>(token: Token, position: nom_locate::LocatedSpan<&'a str>) -> Self {
         Self {
             token,
             line: position.location_line(),

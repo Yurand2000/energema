@@ -44,7 +44,7 @@ fn next_token(input: Span) -> IResult<Span, LocatedToken> {
         keep(&mut token, extract_token)
     ))(input)?;
 
-    let token = LocatedToken::new(token.unwrap(), pos.unwrap());
+    let token = LocatedToken::from_span(token.unwrap(), pos.unwrap());
     
     Ok((out, token))
 }

@@ -63,7 +63,7 @@ fn test_symbol_extraction() {
 
 #[test]
 fn test_space_parser() {
-    let data = " \t\r\n A //comment here \n\r A /*comment 2 */ A";
+    let data = " \t\r\n A //comment here \r\n A /*comment 2 */ A";
     let mut data = StatefulParser::new(data);
 
     assert_eq!(data.parse_no_space(skip(space_parser0)), Ok(()));
@@ -91,6 +91,30 @@ fn test_token_extraction() {
     assert_eq!(data.parse(extract_token), Ok(Token::Keyword(Keyword::Effect)));
     assert_eq!(data.parse(extract_token), Ok(Token::RuneLiteral('c')));
     assert_eq!(data.parse(extract_token), Ok(Token::StringLiteral("string".to_owned())));
+    assert_eq!(data.parse(skip(eof)), Ok(()));
+}
+
+#[test]
+fn test_located_token_parser() {
+    let data = "fn main\r\n  let i = 0; //comment\r\n  25";
+    let mut data = StatefulParser::new(data);
+
+    assert_eq!(data.parse_no_space(skip(space_parser0)), Ok(()));
+    assert_eq!(data.parse_no_space(next_token), Ok(LocatedToken::new(Token::Keyword(Keyword::Fn), 1, 1)));
+    assert_eq!(data.parse_no_space(skip(space_parser0)), Ok(()));
+    assert_eq!(data.parse_no_space(next_token), Ok(LocatedToken::new(Token::Identifier("main".to_owned()), 1, 4)));
+    assert_eq!(data.parse_no_space(skip(space_parser0)), Ok(()));
+    assert_eq!(data.parse_no_space(next_token), Ok(LocatedToken::new(Token::Keyword(Keyword::Let), 2, 3)));
+    assert_eq!(data.parse_no_space(skip(space_parser0)), Ok(()));
+    assert_eq!(data.parse_no_space(next_token), Ok(LocatedToken::new(Token::Identifier("i".to_owned()), 2, 7)));
+    assert_eq!(data.parse_no_space(skip(space_parser0)), Ok(()));
+    assert_eq!(data.parse_no_space(next_token), Ok(LocatedToken::new(Token::Symbol(Symbol::Equal), 2, 9)));
+    assert_eq!(data.parse_no_space(skip(space_parser0)), Ok(()));
+    assert_eq!(data.parse_no_space(next_token), Ok(LocatedToken::new(Token::I32Literal(0), 2, 11)));
+    assert_eq!(data.parse_no_space(skip(space_parser0)), Ok(()));
+    assert_eq!(data.parse_no_space(next_token), Ok(LocatedToken::new(Token::Symbol(Symbol::Semicolon), 2, 12)));
+    assert_eq!(data.parse_no_space(skip(space_parser0)), Ok(()));
+    assert_eq!(data.parse_no_space(next_token), Ok(LocatedToken::new(Token::I32Literal(25), 3, 3)));
     assert_eq!(data.parse_no_space(skip(eof)), Ok(()));
 }
 
