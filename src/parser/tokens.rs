@@ -18,7 +18,51 @@ pub enum Token {
 #[derive(Clone)]
 #[derive(PartialEq, Eq)]
 pub enum Keyword {
-    If, Else, While
+    If,
+    Else,
+    While,
+    Fn,
+    Let,
+    Perform,
+    With,
+    Handler,
+    Effect,
+    Return,
+    Symbol(Symbol),
+}
+
+#[derive(Clone)]
+#[derive(PartialEq, Eq)]
+pub enum Symbol {
+    OpenParenthesis,    // (
+    CloseParentesis,    // )
+    OpenBracket,        // [
+    CloseBracket,       // ]
+    OpenBrace,          // {
+    CloseBrace,         // }
+    Comma,              // ,
+    Colon,              // :
+    Semicolon,          // ;
+    Tilde,              // ~
+    Arrow,              // ->
+    NegatedSet,         // ^
+    Exclamation,        // !
+    Plus,               // +
+    Minus,              // -
+    Times,              // *
+    ForwardSlash,       // /
+    Modulo,             // %
+    LogicalAnd,         // &&
+    LogicalOr,          // ||
+    LogicalXor,         // ^^
+    Pipe,               // |
+    Equal,              // =
+    DoubleEqual,        // ==
+    NotEqual,           // !=
+    GreaterThan,        // >
+    GreaterOrEqual,     // >=
+    SmallerThan,        // <
+    SmallerOrEqual,     // <=
 }
 
 //TokenStream and Token data types
