@@ -11,6 +11,7 @@ use nom_locate::*;
 
 type Span<'a> = LocatedSpan<&'a str>;
 
+use super::tokens;
 use super::tokens::*;
 use super::utils::*;
 
@@ -20,17 +21,26 @@ mod tests;
 pub fn tokenize(code: &str) -> Result<Vec<LocatedToken>, String> {
     let input = Span::from(code);
     let mut tokens = None;
+    let mut eof_position = None;
 
     let result = apply((
         skip(space_parser0),
-        keep(&mut tokens, separated_list0(
-            space_parser1,
-            next_token
-        ))
+        keep(&mut tokens, many0(
+            first(
+                next_token,
+                space_parser0
+            )
+        )),
+        keep(&mut eof_position, position),
+        skip(eof),
     ))(input);
         
     match result {
-        Ok(_) => Ok(tokens.unwrap()),
+        Ok(_) => {
+            let mut tokens = tokens.unwrap();
+            tokens.push(LocatedToken::from_span(Token::Eof, eof_position.unwrap()));
+            Ok(tokens)
+        },
         Err(err) => Err(err.to_string()),
     }
 }
@@ -75,9 +85,6 @@ fn extract_token(input: Span) -> IResult<Span, Token> {
 
         //identifiers
         map(parse_identifier, |value| Token::Identifier(value.into_fragment().to_owned())),
-
-        //eof
-        value(Token::Eof, eof)
     ))(input)
 }
 

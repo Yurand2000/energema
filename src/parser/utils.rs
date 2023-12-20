@@ -28,3 +28,25 @@ pub fn apply<I, O, E, List: nom::sequence::Tuple<I, O, E>>(mut parsers: List) ->
         })
     }
 }
+
+pub fn first<I, O1, O2, E, F1, F2>(mut p1: F1, mut p2: F2) -> impl FnMut(I) -> IResult<I, O1, E>
+    where F1: FnMut(I) -> IResult<I, O1, E>, F2: FnMut(I) -> IResult<I, O2, E>
+{
+    move |input: I| {
+        let (next, data) = p1(input)?;
+        let (out, _) = p2(next)?;
+
+        Ok((out, data))
+    }
+}
+
+pub fn second<I, O1, O2, E, F1, F2>(mut p1: F1, mut p2: F2) -> impl FnMut(I) -> IResult<I, O2, E>
+where F1: FnMut(I) -> IResult<I, O1, E>, F2: FnMut(I) -> IResult<I, O2, E>
+{
+    move |input: I| {
+        let (next, _) = p1(input)?;
+        let (out, data) = p2(next)?;
+
+        Ok((out, data))
+    }
+}

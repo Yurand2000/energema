@@ -118,6 +118,24 @@ fn test_located_token_parser() {
     assert_eq!(data.parse_no_space(skip(eof)), Ok(()));
 }
 
+#[test]
+fn test_tokenizer() {
+    let data = "fn main\r\n  let i = 0; //comment\r\n  25";
+    let out_tokens = vec![
+        LocatedToken::new(Token::Keyword(Keyword::Fn), 1, 1),
+        LocatedToken::new(Token::Identifier("main".to_owned()), 1, 4),
+        LocatedToken::new(Token::Keyword(Keyword::Let), 2, 3),
+        LocatedToken::new(Token::Identifier("i".to_owned()), 2, 7),
+        LocatedToken::new(Token::Symbol(Symbol::Equal), 2, 9),
+        LocatedToken::new(Token::I32Literal(0), 2, 11),
+        LocatedToken::new(Token::Symbol(Symbol::Semicolon), 2, 12),
+        LocatedToken::new(Token::I32Literal(25), 3, 3),
+        LocatedToken::new(Token::Eof, 3, 5),
+    ];
+
+    assert_eq!(tokenize(data), Ok(out_tokens));
+}
+
 struct StatefulParser<'a> {
     span: Span<'a>
 }
