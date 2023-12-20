@@ -28,7 +28,7 @@ fn test_keyword_extraction() {
 fn test_symbol_extraction() {
     let symbols = "( ) [ ] { } , : ; ~ -> ^ ! + - * / % && || ^^ | = == != > >= < <=";
     let mut symbols = StatefulParser::new(symbols);
-    
+
     assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::OpenParenthesis));
     assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::CloseParentesis));
     assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::OpenBracket));
@@ -62,16 +62,35 @@ fn test_symbol_extraction() {
 }
 
 #[test]
-fn test_space_parser() {    
+fn test_space_parser() {
     let data = " \t\r\n A //comment here \n\r A /*comment 2 */ A";
     let mut data = StatefulParser::new(data);
-    
+
     assert_eq!(data.parse_no_space(skip(space_parser0)), Ok(()));
     assert_eq!(data.parse_no_space(skip(char('A'))), Ok(()));
     assert_eq!(data.parse_no_space(skip(space_parser1)), Ok(()));
     assert_eq!(data.parse_no_space(skip(char('A'))), Ok(()));
     assert_eq!(data.parse_no_space(skip(space_parser1)), Ok(()));
     assert_eq!(data.parse_no_space(skip(char('A'))), Ok(()));
+    assert_eq!(data.parse_no_space(skip(eof)), Ok(()));
+}
+
+#[test]
+fn test_token_extraction() {
+    let data = "unit true false 25 my_identifier -170 if != effect 'c' \"string\"";
+    let mut data = StatefulParser::new(data);
+
+    assert_eq!(data.parse(extract_token), Ok(Token::UnitLiteral));
+    assert_eq!(data.parse(extract_token), Ok(Token::BoolLiteral(true)));
+    assert_eq!(data.parse(extract_token), Ok(Token::BoolLiteral(false)));
+    assert_eq!(data.parse(extract_token), Ok(Token::I32Literal(25)));
+    assert_eq!(data.parse(extract_token), Ok(Token::Identifier("my_identifier".to_owned())));
+    assert_eq!(data.parse(extract_token), Ok(Token::I32Literal(-170)));
+    assert_eq!(data.parse(extract_token), Ok(Token::Keyword(Keyword::If)));
+    assert_eq!(data.parse(extract_token), Ok(Token::Symbol(Symbol::NotEqual)));
+    assert_eq!(data.parse(extract_token), Ok(Token::Keyword(Keyword::Effect)));
+    assert_eq!(data.parse(extract_token), Ok(Token::RuneLiteral('c')));
+    assert_eq!(data.parse(extract_token), Ok(Token::StringLiteral("string".to_owned())));
     assert_eq!(data.parse_no_space(skip(eof)), Ok(()));
 }
 
@@ -92,7 +111,7 @@ impl<'a> StatefulParser<'a> {
             keep(&mut out_data, parser),
             skip(space0),
         ))(data);
-    
+
         match result {
             Ok((mut span, _)) => {
                 std::mem::swap(&mut self.span, &mut span);
@@ -109,7 +128,7 @@ impl<'a> StatefulParser<'a> {
         let result = apply((
             keep(&mut out_data, parser),
         ))(data);
-    
+
         match result {
             Ok((mut span, _)) => {
                 std::mem::swap(&mut self.span, &mut span);
