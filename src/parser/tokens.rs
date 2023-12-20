@@ -2,6 +2,7 @@ use nom::*;
 
 //Most important data type which holds the contents of each token.
 
+#[derive(Debug)]
 #[derive(Clone)]
 #[derive(PartialEq, Eq)]
 pub enum Token {
@@ -16,6 +17,7 @@ pub enum Token {
     Eof,
 }
 
+#[derive(Debug)]
 #[derive(Clone)]
 #[derive(PartialEq, Eq)]
 pub enum Keyword {
@@ -31,6 +33,7 @@ pub enum Keyword {
     Return,
 }
 
+#[derive(Debug)]
 #[derive(Clone)]
 #[derive(PartialEq, Eq)]
 pub enum Symbol {

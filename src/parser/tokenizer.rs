@@ -14,22 +14,25 @@ type Span<'a> = LocatedSpan<&'a str>;
 use super::tokens::*;
 use super::utils::*;
 
+#[cfg(test)]
+mod tests;
+
 pub fn tokenize(code: &str) -> Result<Vec<LocatedToken>, String> {
     let input = Span::from(code);
-    
-    let result = separated_list0(
-        space_parser1,
-        next_token
-    )(input);
+    let mut tokens = None;
+
+    let result = apply((
+        skip(space_parser0),
+        keep(&mut tokens, separated_list0(
+            space_parser1,
+            next_token
+        ))
+    ))(input);
         
     match result {
-        Ok((_, tokens)) => Ok(tokens),
+        Ok(_) => Ok(tokens.unwrap()),
         Err(err) => Err(err.to_string()),
     }
-}
-
-fn space_parser1(input: Span) -> IResult<Span, ()> {
-    todo!()
 }
 
 fn next_token(input: Span) -> IResult<Span, LocatedToken> {
@@ -150,5 +153,51 @@ fn parse_string(input: Span) -> IResult<Span, String> {
     map(
         delimited(char('"'), many1(none_of("\"")), char('"')),
         |vect| vect.into_iter().collect()
+    )(input)
+}
+
+fn space_parser0(input: Span) -> IResult<Span, Span> {
+    recognize(
+        tuple((
+            multispace0,
+            opt(alt((
+                single_line_comment,
+                multi_line_comment,
+            ))),
+            multispace0,
+        ))
+    )(input)
+}
+
+fn space_parser1(input: Span) -> IResult<Span, Span> {
+    recognize(
+        tuple((
+            multispace1,
+            opt(alt((
+                single_line_comment,
+                multi_line_comment,
+            ))),
+            multispace0,
+        ))
+    )(input)
+}
+
+fn single_line_comment(input: Span) -> IResult<Span, Span> {
+    recognize(
+        tuple((
+            tag("//"),
+            is_not("\n\r"),
+            line_ending
+        ))
+    )(input)
+}
+
+fn multi_line_comment(input: Span) -> IResult<Span, Span> {
+    recognize(
+        tuple((
+            tag("/*"),
+            take_until("*/"),
+            tag("*/"),
+        ))
     )(input)
 }
