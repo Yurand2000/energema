@@ -21,6 +21,44 @@ fn test_keyword_extraction() {
     assert_eq!(keywords.parse(parse_keyword), Ok(Keyword::Handler));
     assert_eq!(keywords.parse(parse_keyword), Ok(Keyword::Effect));
     assert_eq!(keywords.parse(parse_keyword), Ok(Keyword::Return));
+    assert_eq!(keywords.parse(skip(eof)), Ok(()));
+}
+
+#[test]
+fn test_symbol_extraction() {
+    let symbols = "( ) [ ] { } , : ; ~ -> ^ ! + - * / % && || ^^ | = == != > >= < <=";
+    let mut symbols = StatefulParser::new(symbols);
+    
+    assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::OpenParenthesis));
+    assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::CloseParentesis));
+    assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::OpenBracket));
+    assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::CloseBracket));
+    assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::OpenBrace));
+    assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::CloseBrace));
+    assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::Comma));
+    assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::Colon));
+    assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::Semicolon));
+    assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::Tilde));
+    assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::Arrow));
+    assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::NegatedSet));
+    assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::Exclamation));
+    assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::Plus));
+    assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::Minus));
+    assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::Times));
+    assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::ForwardSlash));
+    assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::Modulo));
+    assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::LogicalAnd));
+    assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::LogicalOr));
+    assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::LogicalXor));
+    assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::Pipe));
+    assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::Equal));
+    assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::DoubleEqual));
+    assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::NotEqual));
+    assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::GreaterThan));
+    assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::GreaterOrEqual));
+    assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::SmallerThan));
+    assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::SmallerOrEqual));
+    assert_eq!(symbols.parse(skip(eof)), Ok(()));
 }
 
 struct StatefulParser<'a> {

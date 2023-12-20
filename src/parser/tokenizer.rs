@@ -110,7 +110,7 @@ fn parse_symbol(input: Span) -> IResult<Span, Symbol> {
         )),
         alt((
             value(Symbol::OpenParenthesis, char('(')),
-            value(Symbol::CloseParentesis, char('(')),
+            value(Symbol::CloseParentesis, char(')')),
             value(Symbol::OpenBracket, char('[')),
             value(Symbol::CloseBracket, char(']')),
             value(Symbol::OpenBrace, char('{')),
