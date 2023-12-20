@@ -10,7 +10,10 @@ use nom::{
 
 use super::ast::*;
 
+mod utils;
 mod tokens;
+mod tokenizer;
+
 
 pub fn parse_code(code: &str) -> Result<Vec<Declaration>, String> {
     match tuple((many0(declaration), space_parser0, eof))(code) {

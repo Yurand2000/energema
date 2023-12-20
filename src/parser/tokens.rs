@@ -30,8 +30,18 @@ pub struct TokenStream<'a, T> {
 #[derive(PartialEq, Eq)]
 pub struct LocatedToken {
     token: Token,
-    line: i32,
-    column: i32
+    line: u32,
+    column: u32
+}
+
+impl LocatedToken {
+    pub fn new<'a>(token: Token, position: nom_locate::LocatedSpan<&'a str>) -> Self {
+        Self {
+            token,
+            line: position.location_line(),
+            column: position.get_utf8_column() as u32
+        }
+    }
 }
 
 //Traits to implement for the TokenStream type
