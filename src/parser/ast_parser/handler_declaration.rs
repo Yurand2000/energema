@@ -51,7 +51,7 @@ pub fn parse_return_handler(input: TokenStream<LocatedToken>) -> IResult<TokenSt
         keep(&mut in_type, parse_type),
         skip(single_tag(Symbol::Arrow)),
         keep(&mut out_type, parse_type),
-        keep(&mut body, parse_function_body),
+        keep(&mut body, parse_block),
     ))(input)?;
 
     Ok( (stream, (in_type.unwrap(), out_type.unwrap(), name.unwrap(), Box::new(body.unwrap()))) )
@@ -69,7 +69,7 @@ pub fn parse_effect_handler(input: TokenStream<LocatedToken>) -> IResult<TokenSt
             keep(&mut arguments, separated_list0(list_separator, identifier)),
             single_tag(Symbol::CloseParentesis)
         ),
-        keep(&mut body, parse_function_body),
+        keep(&mut body, parse_block),
     ))(input)?;
 
     Ok( (stream, (effect.unwrap(), arguments.unwrap(), Box::new(body.unwrap()))) )

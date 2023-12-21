@@ -19,6 +19,7 @@ mod effect_declaration;
 mod handler_declaration;
 mod identifiers;
 mod if_expressions;
+mod call_expressions;
 mod operator_expressions;
 mod value_parser;
 
@@ -27,6 +28,7 @@ use effect_declaration::*;
 use handler_declaration::*;
 use identifiers::*;
 use if_expressions::*;
+use call_expressions::*;
 use operator_expressions::*;
 use value_parser::*;
 
@@ -97,21 +99,15 @@ fn sequencing_separator(input: TokenStream<LocatedToken>) -> IResult<TokenStream
 }
 
 fn parse_let_expression(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Expression> {
-    todo!()
-}
+    let mut id = None;
+    let mut expr = None;
 
-fn parse_value_call_expression(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Expression> {
-    todo!()
-}
+    let (stream, _) = apply((
+        skip(single_tag(Keyword::Let)),
+        keep(&mut id, identifier),
+        skip(single_tag(Symbol::Equal)),
+        keep(&mut expr, parse_expression_no_sequencing),
+    ))(input)?;
 
-fn parse_function_call_expression(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Expression> {
-    todo!()
-}
-
-fn parse_effect_call_expression(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Expression> {
-    todo!()
-}
-
-fn parse_handler_install_expression(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Expression> {
-    todo!()
+    Ok((stream, Expression::Let { id: id.unwrap(), expression: Box::new(expr.unwrap()) }))
 }
