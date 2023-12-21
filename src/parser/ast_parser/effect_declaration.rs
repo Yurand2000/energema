@@ -9,9 +9,9 @@ pub fn parse_effect_declaration(input: TokenStream<LocatedToken>) -> IResult<Tok
         skip(single_tag(Keyword::Effect)),
         keep(&mut name, identifier),
         skip(single_tag(Symbol::Colon)),
-        keep(&mut in_types, separated_list1(list_separator, type_string)),
+        keep(&mut in_types, separated_list1(list_separator, parse_type)),
         skip(single_tag(Symbol::Arrow)),
-        keep(&mut out_type, type_string),
+        keep(&mut out_type, parse_type),
         skip(single_tag(Symbol::Semicolon)),
     ))(input)?;
 

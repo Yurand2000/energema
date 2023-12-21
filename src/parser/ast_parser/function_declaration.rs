@@ -18,3 +18,17 @@ pub fn parse_function_declaration(input: TokenStream<LocatedToken>) -> IResult<T
 
     Ok((stream, FunDeclaration{ name: name.unwrap(), arguments: arguments.unwrap(), expression: Box::new(body.unwrap()) }))
 }
+
+pub fn parse_function_body(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Expression> {
+    let mut body = None;
+
+    let (stream, _) = apply((
+        delimited(
+            single_tag(Symbol::OpenBrace),
+            keep(&mut body, parse_expression), 
+            single_tag(Symbol::CloseBrace)
+        ),
+    ))(input)?;
+
+    Ok((stream, body.unwrap()))
+}

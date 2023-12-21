@@ -17,11 +17,13 @@ use utils::*;
 mod function_declaration;
 mod effect_declaration;
 mod handler_declaration;
+mod identifiers;
 mod value_parser;
 
 use function_declaration::*;
 use effect_declaration::*;
 use handler_declaration::*;
+use identifiers::*;
 use value_parser::*;
 
 use super::tokenizer::tokenize;
@@ -49,14 +51,6 @@ fn parse_declaration(input: TokenStream<LocatedToken>) -> IResult<TokenStream<Lo
     ))(input)
 }
 
-fn parse_function_body(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Expression> {
-    todo!()
-}
-
-fn parse_effect(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Effect> {
-    todo!()
-}
-
-fn type_string(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Type> {
+fn parse_expression(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Expression> {
     todo!()
 }
