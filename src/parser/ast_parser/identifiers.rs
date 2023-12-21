@@ -63,13 +63,11 @@ pub fn parse_computation_effects(input: TokenStream<LocatedToken>) -> IResult<To
 
     let (stream, _) = apply((
         skip(single_tag(Symbol::Exclamation)),
-        delimited(
-            single_tag(Symbol::OpenBrace),
+        braces(
             apply((
                 keep(&mut inverted, opt(single_tag(Symbol::NegatedSet))),
                 keep(&mut effects, separated_list0(list_separator, parse_effect_name))
             )),
-            single_tag(Symbol::CloseBrace)
         )
     ))(input)?;
 
@@ -89,11 +87,7 @@ pub fn parse_function_type(input: TokenStream<LocatedToken>) -> IResult<TokenStr
 
     let (stream, _) = apply((
         skip(single_tag(Keyword::Fn)),
-        delimited(
-            single_tag(Symbol::OpenParenthesis),
-            keep(&mut in_types, separated_list0(list_separator, parse_type)),
-            single_tag(Symbol::CloseParentesis)
-        ),
+        keep(&mut in_types, parenthesis(separated_list0(list_separator, parse_type))),
         skip(single_tag(Symbol::Arrow)),
         keep(&mut out_type, parse_computation_type),
     ))(input)?;

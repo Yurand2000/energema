@@ -11,8 +11,7 @@ pub fn parse_handler_declaration(input: TokenStream<LocatedToken>) -> IResult<To
         keep(&mut name, identifier),
         skip(single_tag(Symbol::OpenParenthesis)),
         skip(single_tag(Symbol::CloseParentesis)),
-        delimited(
-            single_tag(Symbol::OpenBrace),
+        braces(
             alt((
                 apply((
                     keep(&mut return_handler, parse_return_handler),
@@ -30,7 +29,6 @@ pub fn parse_handler_declaration(input: TokenStream<LocatedToken>) -> IResult<To
                     skip(opt(list_separator)),
                 )),
             )),
-            single_tag(Symbol::CloseBrace),
         ),
     ))(input)?;
 
@@ -64,11 +62,7 @@ pub fn parse_effect_handler(input: TokenStream<LocatedToken>) -> IResult<TokenSt
 
     let (stream, _) = apply((
         keep(&mut effect, parse_effect_name),
-        delimited(
-            single_tag(Symbol::OpenParenthesis),
-            keep(&mut arguments, separated_list0(list_separator, identifier)),
-            single_tag(Symbol::CloseParentesis)
-        ),
+        keep(&mut arguments, parenthesis(separated_list0(list_separator, identifier))),
         keep(&mut body, parse_block),
     ))(input)?;
 

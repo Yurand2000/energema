@@ -8,11 +8,7 @@ pub fn parse_function_declaration(input: TokenStream<LocatedToken>) -> IResult<T
     let (stream, _) = apply((
         skip(single_tag(Keyword::Fn)),
         keep(&mut name, identifier),
-        delimited(
-            single_tag(Symbol::OpenParenthesis),
-            keep(&mut arguments, separated_list1(list_separator, identifier)),
-            single_tag(Symbol::CloseParentesis)
-        ),
+        keep(&mut arguments, parenthesis(separated_list1(list_separator, identifier))),
         keep(&mut body, parse_block),
     ))(input)?;
 
@@ -23,11 +19,7 @@ pub fn parse_block(input: TokenStream<LocatedToken>) -> IResult<TokenStream<Loca
     let mut body = None;
 
     let (stream, _) = apply((
-        delimited(
-            single_tag(Symbol::OpenBrace),
-            keep(&mut body, parse_expression), 
-            single_tag(Symbol::CloseBrace)
-        ),
+        keep(&mut body, braces(parse_expression)),
     ))(input)?;
 
     Ok((stream, body.unwrap()))

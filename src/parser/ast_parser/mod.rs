@@ -76,11 +76,7 @@ fn parse_expression(input: TokenStream<LocatedToken>) -> IResult<TokenStream<Loc
 
 fn parse_expression_no_sequencing(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Expression> {
     alt((
-        delimited(
-            single_tag(Symbol::OpenParenthesis),
-            parse_expression_no_sequencing,
-            single_tag(Symbol::CloseParentesis),
-        ),
+        parenthesis(parse_expression_no_sequencing),
         parse_let_expression,
         parse_if_expression,
         parse_while_expression,
