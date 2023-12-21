@@ -45,7 +45,7 @@ pub fn parse_code(code: &str) -> Result<Vec<Declaration>, String> {
 
     match result {
         Ok(_) => Ok(declarations.unwrap()),
-        Err(err) => Err(err.to_string()),
+        Err(err) => Err(format!("{:#?}", err)),
     }
 }
 

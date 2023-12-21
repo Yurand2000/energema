@@ -1,3 +1,5 @@
+use std::fmt::{Debug, Display};
+
 use nom::*;
 
 //Most important data type which holds the contents of each token.
@@ -80,7 +82,18 @@ impl From<Keyword> for TokenType {
     }
 }
 
-#[derive(Debug)]
+impl From<Symbol> for Token {
+    fn from(value: Symbol) -> Self {
+        Token::Symbol(value)
+    }
+}
+
+impl From<Keyword> for Token {
+    fn from(value: Keyword) -> Self {
+        Token::Keyword(value)
+    }
+}
+
 #[derive(Clone)]
 #[derive(PartialEq, Eq)]
 pub struct LocatedToken {
@@ -151,10 +164,23 @@ impl PartialEq<TokenType> for LocatedToken {
     }
 }
 
-#[derive(Debug)]
+impl std::fmt::Debug for LocatedToken {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("[{:3}:{:3} -> {:?}]", self.line, self.column, self.token, ))
+    }
+}
+
 #[derive(Clone)]
 pub struct TokenStream<'a, T> {
     stream: &'a [T]
+}
+
+impl<'a, T> std::fmt::Debug for TokenStream<'a, T>
+    where T: std::fmt::Debug
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_list().entries(self.stream).finish()
+    }
 }
 
 impl<'a, T> TokenStream<'a, T> {
@@ -165,12 +191,12 @@ impl<'a, T> TokenStream<'a, T> {
 
 impl<'a, T> InputTake for TokenStream<'a, T> {
     fn take(&self, count: usize) -> Self {
-        Self::new( self.stream.split_at(count).0 )
+        Self::new( &self.stream[..count] )
     }
 
     fn take_split(&self, count: usize) -> (Self, Self) {
         let (left, right) = self.stream.split_at(count);
-        (Self::new(left), Self::new(right))
+        (Self::new(right), Self::new(left))
     }
 }
 

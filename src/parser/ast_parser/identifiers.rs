@@ -34,7 +34,7 @@ pub fn parse_effect_name(input: TokenStream<LocatedToken>) -> IResult<TokenStrea
 pub fn parse_type(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Type> {
     alt((
         value(Type::Void, single_tag(Symbol::Tilde)),
-        value(Type::Unit, specific_identifier("unit")),
+        value(Type::Unit, single_tag(TokenType::UnitLiteral)),
         value(Type::Bool, specific_identifier("bool")),
         value(Type::I32, specific_identifier("i32")),
         value(Type::Rune, specific_identifier("rune")),
