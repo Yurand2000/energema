@@ -50,6 +50,8 @@ pub fn parse_code(code: &str) -> Result<Vec<Declaration>, String> {
 }
 
 fn parse_declaration(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Declaration> {
+    println!("{:#?}", input);
+
     alt((
         map(parse_function_declaration, |decl| Declaration::Function(decl)),
         map(parse_handler_declaration, |decl| Declaration::Handler(decl)),
@@ -58,12 +60,16 @@ fn parse_declaration(input: TokenStream<LocatedToken>) -> IResult<TokenStream<Lo
 }
 
 fn parse_expression(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Expression> {
+    parse_sequencing_expression(input)
+}
+
+fn parse_sequencing_expression(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Expression> {
     let mut lexpr = None;
     let mut rexpr = None;
 
     let (stream, _) = apply((
-        keep(&mut lexpr, parse_expression_no_sequencing),
-        keep(&mut rexpr, opt(second(sequencing_separator, parse_expression))),
+        keep(&mut lexpr, parse_function_call_expression),
+        keep(&mut rexpr, opt(second(sequencing_separator, cut(parse_expression)))),
     ))(input)?;
 
     let (lexpr, rexpr) = (lexpr.unwrap(), rexpr.unwrap());
@@ -76,16 +82,13 @@ fn parse_expression(input: TokenStream<LocatedToken>) -> IResult<TokenStream<Loc
 
 fn parse_expression_no_sequencing(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Expression> {
     alt((
-        parenthesis(parse_expression_no_sequencing),
+        parenthesis(parse_expression),
         parse_let_expression,
         parse_if_expression,
         parse_while_expression,
-        parse_value_call_expression,
-        parse_function_call_expression,
         parse_effect_call_expression,
         parse_handler_install_expression,
         parse_unary_op_expression,
-        parse_binary_op_expression,
         map(parse_value, |value| Expression::Value(Box::new(value))),
     ))(input)
 }

@@ -63,12 +63,12 @@ pub fn parse_computation_effects(input: TokenStream<LocatedToken>) -> IResult<To
 
     let (stream, _) = apply((
         skip(single_tag(Symbol::Exclamation)),
-        braces(
+        cut(braces(
             apply((
                 keep(&mut inverted, opt(single_tag(Symbol::NegatedSet))),
                 keep(&mut effects, separated_list0(list_separator, parse_effect_name))
             )),
-        )
+        ))
     ))(input)?;
 
     let inverted = inverted.unwrap().is_some();
@@ -87,9 +87,11 @@ pub fn parse_function_type(input: TokenStream<LocatedToken>) -> IResult<TokenStr
 
     let (stream, _) = apply((
         skip(single_tag(Keyword::Fn)),
-        keep(&mut in_types, parenthesis(separated_list0(list_separator, parse_type))),
-        skip(single_tag(Symbol::Arrow)),
-        keep(&mut out_type, parse_computation_type),
+        cut(apply((
+            keep(&mut in_types, parenthesis(separated_list0(list_separator, parse_type))),
+            skip(single_tag(Symbol::Arrow)),
+            keep(&mut out_type, parse_computation_type),
+        ))),
     ))(input)?;
 
     Ok((stream, Type::Fun { in_types: in_types.unwrap(), out_type: Box::new(out_type.unwrap()) }))
@@ -101,9 +103,11 @@ pub fn parse_handler_type(input: TokenStream<LocatedToken>) -> IResult<TokenStre
 
     let (stream, _) = apply((
         skip(single_tag(Keyword::Handler)),
-        keep(&mut in_type, parse_computation_type),
-        skip(single_tag(Symbol::Arrow)),
-        keep(&mut out_type, parse_computation_type),
+        cut(apply((
+            keep(&mut in_type, parse_computation_type),
+            skip(single_tag(Symbol::Arrow)),
+            keep(&mut out_type, parse_computation_type),
+        ))),
     ))(input)?;
 
     Ok((stream, Type::Handler { in_type: Box::new(in_type.unwrap()), out_type: Box::new(out_type.unwrap()) }))

@@ -6,7 +6,7 @@ pub fn parse_unary_op_expression(input: TokenStream<LocatedToken>) -> IResult<To
 
     let (stream, _) = apply((
         keep(&mut operator, parse_unary_operator),
-        keep(&mut expr, parse_expression_no_sequencing),
+        cut(keep(&mut expr, parse_expression_no_sequencing)),
     ))(input)?;
 
     Ok((stream, Expression::UnaryOp(operator.unwrap(), Box::new(expr.unwrap()))))
@@ -14,16 +14,26 @@ pub fn parse_unary_op_expression(input: TokenStream<LocatedToken>) -> IResult<To
 
 pub fn parse_binary_op_expression(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Expression> {
     let mut operator = None;
+    let mut is_binary = None;
     let mut lexpr = None;
     let mut rexpr = None;
 
     let (stream, _) = apply((
         keep(&mut lexpr, parse_expression_no_sequencing),
-        keep(&mut operator, parse_binary_operator),
-        keep(&mut rexpr, parse_expression_no_sequencing),
+        keep(&mut is_binary,
+            opt(apply((
+                keep(&mut operator, parse_binary_operator),
+                cut(keep(&mut rexpr, parse_expression_no_sequencing)),
+            )))
+        ),
     ))(input)?;
 
-    Ok((stream, Expression::BinaryOp(Box::new(lexpr.unwrap()), operator.unwrap(), Box::new(rexpr.unwrap()))))
+    let (lexpr, is_binary) = (lexpr.unwrap(), is_binary.unwrap());
+    if is_binary.is_some() {
+        Ok((stream, Expression::BinaryOp(Box::new(lexpr), operator.unwrap(), Box::new(rexpr.unwrap()))))
+    } else {
+        Ok((stream, lexpr))
+    }
 }
 
 pub fn parse_unary_operator(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, UnaryOp> {

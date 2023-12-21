@@ -91,10 +91,9 @@ pub enum IExpression {
     Let{ id: Identifier, expression: Box<IExpression> },
     If{ guard: Box<IExpression>, then_b: Box<IExpression>, else_b: Box<IExpression> },
     While{ guard: Box<IExpression>, block: Box<IExpression> },
-    ValueCall{ expression: Box<IExpression> },                                   //substitute with Body constructor
-    FuntionCall{ function: Identifier, arguments: Vec<IExpression> },       //substitute with Body constructor
-    EffectCall{ effect: Effect, arguments: Vec<IExpression> },              //substitute with Value(Var($effret)), transform the expression(from the root) to a continuation value
-    HandlingInstall{ handler: Identifier, computation: Box<IExpression> },  //substitute with Body constructor
+    FunctionCall{ function: Box<IExpression>, arguments: Vec<IExpression> },    //substitute with Body constructor
+    EffectCall{ effect: Effect, arguments: Vec<IExpression> },                  //substitute with Value(Var($effret)), transform the expression(from the root) to a continuation value
+    HandlingInstall{ handler: Identifier, computation: Box<IExpression> },      //substitute with Body constructor
 
     UnaryOp(UnaryOp, Box<IExpression>),
     BinaryOp(Box<IExpression>, BinaryOp, Box<IExpression>),
@@ -141,8 +140,7 @@ impl From<Expression> for IExpression {
             Expression::Let { id, expression } => IExpression::Let { id: id, expression: expression.into() },
             Expression::If { guard, then_b, else_b } => IExpression::If { guard: guard.into(), then_b: then_b.into(), else_b: else_b.into() },
             Expression::While { guard, block } => IExpression::While { guard: guard.into(), block: block.into() },
-            Expression::ValueCall { expression } => IExpression::ValueCall { expression: expression.into() },
-            Expression::FunCall { function, arguments } => IExpression::FuntionCall { function, arguments: IExpression::vector(arguments) },
+            Expression::FunCall { function, arguments } => IExpression::FunctionCall { function: function.into(), arguments: IExpression::vector(arguments) },
             Expression::EffCall { effect, arguments } => IExpression::EffectCall { effect, arguments: IExpression::vector(arguments) },
             Expression::Handling { handler, computation } => IExpression::HandlingInstall { handler, computation: computation.into() },
             Expression::UnaryOp(op, expr) => IExpression::UnaryOp(op, expr.into()),

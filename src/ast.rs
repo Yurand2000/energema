@@ -37,8 +37,7 @@ pub enum Expression {
     Let{ id: Identifier, expression: Box<Expression> },
     If{ guard: Box<Expression>, then_b: Box<Expression>, else_b: Box<Expression> },
     While{ guard: Box<Expression>, block: Box<Expression> },
-    ValueCall{ expression: Box<Expression> },
-    FunCall{ function: Identifier, arguments: Vec<Expression> },
+    FunCall{ function: Box<Expression>, arguments: Vec<Expression> },
     EffCall{ effect: Effect, arguments: Vec<Expression> },
     Handling{ handler: Identifier, computation: Box<Expression> },
 

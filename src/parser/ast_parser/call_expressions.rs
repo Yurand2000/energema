@@ -1,27 +1,20 @@
 use super::*;
 
-pub fn parse_value_call_expression(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Expression> {
-    let mut expr = None;
-
-    let (stream, _) = apply((
-        keep(&mut expr, parse_expression_no_sequencing),
-        skip(single_tag(Symbol::OpenParenthesis)),
-        skip(single_tag(Symbol::CloseParentesis)),
-    ))(input)?;
-
-    Ok((stream, Expression::ValueCall { expression: Box::new(expr.unwrap()) }))
-}
-
 pub fn parse_function_call_expression(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Expression> {
-    let mut function = None;
+    let mut expr = None;
     let mut arguments = None;
 
     let (stream, _) = apply((
-        keep(&mut function, identifier),
-        keep(&mut arguments, parenthesis(separated_list1(list_separator, parse_expression_no_sequencing))),
+        keep(&mut expr, parse_binary_op_expression),
+        keep(&mut arguments, opt(parenthesis(separated_list1(list_separator, parse_expression_no_sequencing)))),
     ))(input)?;
 
-    Ok((stream, Expression::FunCall { function: function.unwrap(), arguments: arguments.unwrap() }))
+    let (function, arguments) = (expr.unwrap(), arguments.unwrap());
+    if arguments.is_some() {
+        Ok((stream, Expression::FunCall { function: Box::new(function), arguments: arguments.unwrap() }))
+    } else {
+        Ok((stream, function))
+    }
 }
 
 pub fn parse_effect_call_expression(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Expression> {
