@@ -1,6 +1,8 @@
 use super::*;
 
-pub fn parse_handler_declaration(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, HandlerDeclaration> {
+pub fn parse_handler_declaration<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, HandlerDeclaration, E>
+    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
+{
     let mut name = None;
     let mut return_handler = None;
     let mut effect_handlers0 = None;
@@ -15,18 +17,18 @@ pub fn parse_handler_declaration(input: TokenStream<LocatedToken>) -> IResult<To
             braces(
                 alt((
                     apply((
-                        keep(&mut return_handler, parse_return_handler),
+                        keep(&mut return_handler, context("return_handler", parse_return_handler)),
                         alt((
                             apply((
                                 skip(list_separator),
-                                keep(&mut effect_handlers0, separated_list1(list_separator, parse_effect_handler)),
+                                keep(&mut effect_handlers0, separated_list1(list_separator, context("effect_handler", parse_effect_handler))),
                                 skip(opt(list_separator)),
                             )),
                             skip(opt(list_separator)),
                         ))
                     )),
                     apply((
-                        keep(&mut effect_handlers1, separated_list0(list_separator, parse_effect_handler)),
+                        keep(&mut effect_handlers1, separated_list0(list_separator, context("effect_handler", parse_effect_handler))),
                         skip(opt(list_separator)),
                     )),
                 )),
@@ -38,7 +40,9 @@ pub fn parse_handler_declaration(input: TokenStream<LocatedToken>) -> IResult<To
     Ok((stream, HandlerDeclaration{ name: name.unwrap(), return_handler, effect_handlers }))
 }
 
-pub fn parse_return_handler(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, (Type, Type, Identifier, Box<Expression>)> {
+pub fn parse_return_handler<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, (Type, Type, Identifier, Box<Expression>), E>
+    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
+{
     let mut in_type = None;
     let mut out_type = None;
     let mut name = None;
@@ -52,14 +56,16 @@ pub fn parse_return_handler(input: TokenStream<LocatedToken>) -> IResult<TokenSt
             keep(&mut in_type, parse_type),
             skip(single_tag(Symbol::Arrow)),
             keep(&mut out_type, parse_type),
-            keep(&mut body, parse_block),
+            keep(&mut body, context("effect_handler_block", parse_block)),
         ))),
     ))(input)?;
 
     Ok( (stream, (in_type.unwrap(), out_type.unwrap(), name.unwrap(), Box::new(body.unwrap()))) )
 }
 
-pub fn parse_effect_handler(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, (Effect, Vec<Identifier>, Box<Expression>)> {
+pub fn parse_effect_handler<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, (Effect, Vec<Identifier>, Box<Expression>), E>
+    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
+{
     let mut effect = None;
     let mut arguments = None;
     let mut body = None;
@@ -67,7 +73,7 @@ pub fn parse_effect_handler(input: TokenStream<LocatedToken>) -> IResult<TokenSt
     let (stream, _) = apply((
         keep(&mut effect, parse_effect_name),
         keep(&mut arguments, parenthesis(separated_list0(list_separator, identifier))),
-        keep(&mut body, parse_block),
+        keep(&mut body, context("effect_handler_block", parse_block)),
     ))(input)?;
 
     Ok( (stream, (effect.unwrap(), arguments.unwrap(), Box::new(body.unwrap()))) )

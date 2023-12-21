@@ -1,6 +1,8 @@
 use super::*;
 
-pub fn parse_effect_declaration(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, EffectDeclaration> {
+pub fn parse_effect_declaration<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, EffectDeclaration, E>
+    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
+{
     let mut name = None;
     let mut in_types = None;
     let mut out_type = None;

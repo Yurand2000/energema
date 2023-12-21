@@ -1,3 +1,5 @@
+use nom::Err;
+use nom::error::{ParseError, VerboseError, convert_error, context, ContextError};
 use nom::{
     IResult,
     bytes::complete::*,
@@ -34,22 +36,29 @@ use value_parser::*;
 
 use super::tokenizer::tokenize;
 
+type Stream<'a> = TokenStream<'a, LocatedToken>;
+
 pub fn parse_code(code: &str) -> Result<Vec<Declaration>, String> {
     let mut declarations = None;
 
     let input = tokenize(code)?;
+    let input = TokenStream::new(&input);
     let result = apply((
-        keep(&mut declarations, many0(parse_declaration)),
+        keep(&mut declarations, many0(parse_declaration::<VerboseError<Stream>>)),
         skip(single_tag(TokenType::Eof)),
-    ))(TokenStream::new(&input));
+    ))(input);
 
     match result {
         Ok(_) => Ok(declarations.unwrap()),
-        Err(err) => Err(format!("{:#?}", err)),
+        Err(Err::Error(err)) => Err(format!("{:#?}", err)),
+        Err(Err::Failure(err)) => Err(format!("{:#?}", err)),
+        Err(Err::Incomplete(_)) => todo!(),
     }
 }
 
-fn parse_declaration(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Declaration> {
+fn parse_declaration<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Declaration, E>
+    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
+{
     println!("{:#?}", input);
 
     alt((
@@ -59,16 +68,20 @@ fn parse_declaration(input: TokenStream<LocatedToken>) -> IResult<TokenStream<Lo
     ))(input)
 }
 
-fn parse_expression(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Expression> {
-    parse_sequencing_expression(input)
+fn parse_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expression, E>
+    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
+{
+    context("sequencing", parse_sequencing_expression)(input)
 }
 
-fn parse_sequencing_expression(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Expression> {
+fn parse_sequencing_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expression, E>
+    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
+{
     let mut lexpr = None;
     let mut rexpr = None;
 
     let (stream, _) = apply((
-        keep(&mut lexpr, parse_function_call_expression),
+        keep(&mut lexpr, context("fn_call", parse_function_call_expression)),
         keep(&mut rexpr, opt(second(sequencing_separator, cut(parse_expression)))),
     ))(input)?;
 
@@ -80,7 +93,9 @@ fn parse_sequencing_expression(input: TokenStream<LocatedToken>) -> IResult<Toke
     }
 }
 
-fn parse_expression_no_sequencing(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Expression> {
+fn parse_expression_no_sequencing<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expression, E>
+    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
+{
     alt((
         parenthesis(parse_expression),
         parse_let_expression,
@@ -93,11 +108,15 @@ fn parse_expression_no_sequencing(input: TokenStream<LocatedToken>) -> IResult<T
     ))(input)
 }
 
-fn sequencing_separator(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, TokenStream<LocatedToken>> {
+fn sequencing_separator<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Stream<'a>, E>
+    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
+{
     single_tag(Symbol::Semicolon)(input)
 }
 
-fn parse_let_expression(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Expression> {
+fn parse_let_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expression, E>
+    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
+{
     let mut id = None;
     let mut expr = None;
 

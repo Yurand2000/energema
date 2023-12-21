@@ -1,6 +1,8 @@
 use super::*;
 
-pub fn parse_unary_op_expression(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Expression> {
+pub fn parse_unary_op_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expression, E>
+    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
+{
     let mut operator = None;
     let mut expr = None;
 
@@ -12,14 +14,16 @@ pub fn parse_unary_op_expression(input: TokenStream<LocatedToken>) -> IResult<To
     Ok((stream, Expression::UnaryOp(operator.unwrap(), Box::new(expr.unwrap()))))
 }
 
-pub fn parse_binary_op_expression(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Expression> {
+pub fn parse_binary_op_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expression, E>
+    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
+{
     let mut operator = None;
     let mut is_binary = None;
     let mut lexpr = None;
     let mut rexpr = None;
 
     let (stream, _) = apply((
-        keep(&mut lexpr, parse_expression_no_sequencing),
+        keep(&mut lexpr, context("no_sequencing", parse_expression_no_sequencing)),
         keep(&mut is_binary,
             opt(apply((
                 keep(&mut operator, parse_binary_operator),
@@ -36,11 +40,15 @@ pub fn parse_binary_op_expression(input: TokenStream<LocatedToken>) -> IResult<T
     }
 }
 
-pub fn parse_unary_operator(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, UnaryOp> {
+pub fn parse_unary_operator<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, UnaryOp, E>
+    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
+{
     value(UnaryOp::LNot, single_tag(Symbol::Exclamation))(input)
 }
 
-pub fn parse_binary_operator(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, BinaryOp> {
+pub fn parse_binary_operator<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, BinaryOp, E>
+    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
+{
     alt((
         value(BinaryOp::Add, single_tag(Symbol::Plus)),
         value(BinaryOp::Sub, single_tag(Symbol::Minus)),

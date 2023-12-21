@@ -1,11 +1,13 @@
 use super::*;
 
-pub fn parse_function_call_expression(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Expression> {
+pub fn parse_function_call_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expression, E>
+    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
+{
     let mut expr = None;
     let mut arguments = None;
 
     let (stream, _) = apply((
-        keep(&mut expr, parse_binary_op_expression),
+        keep(&mut expr, context("bin_op", parse_binary_op_expression)),
         keep(&mut arguments, opt(parenthesis(separated_list1(list_separator, parse_expression_no_sequencing)))),
     ))(input)?;
 
@@ -17,7 +19,9 @@ pub fn parse_function_call_expression(input: TokenStream<LocatedToken>) -> IResu
     }
 }
 
-pub fn parse_effect_call_expression(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Expression> {
+pub fn parse_effect_call_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expression, E>
+    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
+{
     let mut effect = None;
     let mut arguments = None;
 
@@ -32,7 +36,9 @@ pub fn parse_effect_call_expression(input: TokenStream<LocatedToken>) -> IResult
     Ok((stream, Expression::EffCall { effect: effect.unwrap(), arguments: arguments.unwrap() }))
 }
 
-pub fn parse_handler_install_expression(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Expression> {
+pub fn parse_handler_install_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expression, E>
+    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
+{
     let mut handler = None;
     let mut expr = None;
 

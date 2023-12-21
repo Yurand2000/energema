@@ -1,6 +1,8 @@
 use super::*;
 
-pub fn parse_if_expression(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Expression> {
+pub fn parse_if_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expression, E>
+    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
+{
     let mut guard = None;
     let mut then_b = None;
     let mut else_b = None;
@@ -18,7 +20,9 @@ pub fn parse_if_expression(input: TokenStream<LocatedToken>) -> IResult<TokenStr
     Ok((stream, Expression::If { guard: Box::new(guard.unwrap()), then_b: Box::new(then_b.unwrap()), else_b: Box::new(else_b.unwrap()) }))
 }
 
-pub fn parse_while_expression(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Expression> {
+pub fn parse_while_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expression, E>
+    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
+{
     let mut guard = None;
     let mut block = None;
 

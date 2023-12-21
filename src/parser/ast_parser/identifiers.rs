@@ -1,27 +1,31 @@
-use nom::error::Error;
-
 use super::*;
 
-pub fn identifier(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Identifier> {
-    map(tag(tokens![TokenType::Identifier]), |tokens: TokenStream<LocatedToken>| {
+pub fn identifier<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Identifier, E>
+    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
+{
+    map(tag(tokens![TokenType::Identifier]), |tokens: Stream<'a>| {
         let Token::Identifier(value) = tokens.iter_elements().next().unwrap().get_token().clone() else { panic!() };
         Identifier(value)
     })(input)
 }
 
-pub fn specific_identifier<'a, 'b>(id: &'b str) -> impl FnMut(TokenStream<'a, LocatedToken>) -> IResult<TokenStream<'a, LocatedToken>, Identifier> + 'b {
-    move |input: TokenStream<LocatedToken>| {
+pub fn specific_identifier<'a, 'b, E>(id: &'b str) -> impl FnMut(Stream<'a>) -> IResult<Stream<'a>, Identifier, E> + 'b
+    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
+{
+    move |input: Stream<'a>| {
         let (stream, identifier) = identifier(input.clone())?;
         
         if identifier.0 == id {
             Ok((stream, identifier))
         } else {
-            Err(nom::Err::Error(Error::new(input, nom::error::ErrorKind::Tag)))
+            Err(nom::Err::Error(E::from_error_kind(input, nom::error::ErrorKind::Tag)))
         }
     }
 }
 
-pub fn parse_effect_name(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Effect> {
+pub fn parse_effect_name<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Effect, E>
+    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
+{
     let mut typ = None;
 
     let (stream, _) = apply((
@@ -31,7 +35,9 @@ pub fn parse_effect_name(input: TokenStream<LocatedToken>) -> IResult<TokenStrea
     Ok((stream, Effect{ eff_type: typ.unwrap(), name: None }))
 }
 
-pub fn parse_type(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Type> {
+pub fn parse_type<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Type, E>
+    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
+{
     alt((
         value(Type::Void, single_tag(Symbol::Tilde)),
         value(Type::Unit, single_tag(TokenType::UnitLiteral)),
@@ -45,7 +51,9 @@ pub fn parse_type(input: TokenStream<LocatedToken>) -> IResult<TokenStream<Locat
     ))(input)
 }
 
-pub fn parse_computation_type(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, ComputationType> {
+pub fn parse_computation_type<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, ComputationType, E>
+    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
+{
     let mut typ = None;
     let mut effects = None;
 
@@ -57,7 +65,9 @@ pub fn parse_computation_type(input: TokenStream<LocatedToken>) -> IResult<Token
     Ok((stream, ComputationType{ typ: typ.unwrap(), effects: effects.unwrap() }))
 }
 
-pub fn parse_computation_effects(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, ComputationEffects> {
+pub fn parse_computation_effects<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, ComputationEffects, E>
+    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
+{
     let mut inverted = None;
     let mut effects = None;
 
@@ -81,7 +91,9 @@ pub fn parse_computation_effects(input: TokenStream<LocatedToken>) -> IResult<To
     }
 }
 
-pub fn parse_function_type(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Type> {
+pub fn parse_function_type<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Type, E>
+    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
+{
     let mut in_types = None;
     let mut out_type = None;
 
@@ -97,7 +109,9 @@ pub fn parse_function_type(input: TokenStream<LocatedToken>) -> IResult<TokenStr
     Ok((stream, Type::Fun { in_types: in_types.unwrap(), out_type: Box::new(out_type.unwrap()) }))
 }
 
-pub fn parse_handler_type(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Type> {
+pub fn parse_handler_type<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Type, E>
+    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
+{
     let mut in_type = None;
     let mut out_type = None;
 
