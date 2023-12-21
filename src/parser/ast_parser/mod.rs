@@ -18,6 +18,7 @@ mod function_declaration;
 mod effect_declaration;
 mod handler_declaration;
 mod identifiers;
+mod if_expressions;
 mod operator_expressions;
 mod value_parser;
 
@@ -25,6 +26,7 @@ use function_declaration::*;
 use effect_declaration::*;
 use handler_declaration::*;
 use identifiers::*;
+use if_expressions::*;
 use operator_expressions::*;
 use value_parser::*;
 
@@ -95,14 +97,6 @@ fn sequencing_separator(input: TokenStream<LocatedToken>) -> IResult<TokenStream
 }
 
 fn parse_let_expression(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Expression> {
-    todo!()
-}
-
-fn parse_if_expression(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Expression> {
-    todo!()
-}
-
-fn parse_while_expression(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Expression> {
     todo!()
 }
 
