@@ -39,7 +39,7 @@ impl EnvBlock {
     }
 
     pub fn get_handler<'a>(&self, defs: &'a Declarations) -> Option<&'a HandlerDeclaration> {
-        defs.handlers.get(&self.handler)
+        defs.find_handler(&self.handler)
     }
 
     pub fn get_handler_name(&self) -> &Identifier {
