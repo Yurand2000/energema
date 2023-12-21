@@ -11,7 +11,6 @@ use nom_locate::*;
 
 type Span<'a> = LocatedSpan<&'a str>;
 
-use super::tokens;
 use super::tokens::*;
 use super::utils::*;
 

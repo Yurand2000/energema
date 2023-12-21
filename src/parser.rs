@@ -11,9 +11,11 @@ use nom::{
 use super::ast::*;
 
 mod utils;
+#[macro_use]
 mod tokens;
 mod tokenizer;
 
+mod value_parser;
 
 pub fn parse_code(code: &str) -> Result<Vec<Declaration>, String> {
     match tuple((many0(declaration), space_parser0, eof))(code) {
