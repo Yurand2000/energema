@@ -15,15 +15,16 @@ mod utils;
 #[macro_use]
 mod tokens;
 mod tokenizer;
-
 mod ast_parser;
 
-pub fn parse_code(code: &str) -> Result<Vec<Declaration>, String> {
+pub use ast_parser::parse_code;
+
+/*pub fn parse_code(code: &str) -> Result<Vec<Declaration>, String> {
     match tuple((many0(declaration), space_parser0, eof))(code) {
         Ok((_, (declarations, _, _))) => Ok(declarations),
         Err(err) => Err(err.to_string()),
     }
-}
+}*/
 
 fn declaration(input: &str) -> IResult<&str, Declaration> {
     alt((

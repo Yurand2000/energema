@@ -151,6 +151,7 @@ impl PartialEq<TokenType> for LocatedToken {
     }
 }
 
+#[derive(Debug)]
 #[derive(Clone)]
 pub struct TokenStream<'a, T> {
     stream: &'a [T]

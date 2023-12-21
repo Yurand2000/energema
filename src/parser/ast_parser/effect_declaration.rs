@@ -1,6 +1,6 @@
 use super::*;
 
-pub fn effect_declaration(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, EffectDeclaration> {
+pub fn parse_effect_declaration(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, EffectDeclaration> {
     let mut name = None;
     let mut in_types = None;
     let mut out_type = None;

@@ -1,6 +1,6 @@
 use super::*;
 
-pub fn handler_declaration(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, HandlerDeclaration> {
+pub fn parse_handler_declaration(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, HandlerDeclaration> {
     let mut name = None;
     let mut return_handler = None;
     let mut effect_handlers0 = None;
