@@ -38,6 +38,9 @@ use super::tokenizer::tokenize;
 
 type Stream<'a> = TokenStream<'a, LocatedToken>;
 
+#[cfg(test)]
+type TestError<'a> = nom::error::Error<Stream<'a>>;
+
 pub fn parse_code(code: &str) -> Result<Vec<Declaration>, String> {
     let mut declarations = None;
 
@@ -59,8 +62,6 @@ pub fn parse_code(code: &str) -> Result<Vec<Declaration>, String> {
 fn parse_declaration<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Declaration, E>
     where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
 {
-    println!("{:#?}", input);
-
     alt((
         map(parse_function_declaration, |decl| Declaration::Function(decl)),
         map(parse_handler_declaration, |decl| Declaration::Handler(decl)),

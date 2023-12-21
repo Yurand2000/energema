@@ -47,13 +47,11 @@ pub fn braces<'a, T, E>(parser: impl FnMut(Stream<'a>) -> IResult<Stream<'a>, T,
     )
 }
 
-type ErrorType<'a> = nom::error::Error<Stream<'a>>;
-
 #[test]
 fn test_single_tag() {
     let data = tokenize("effect ->").unwrap();
     let stream = TokenStream::new(&data);
 
-    let (next, _) = single_tag::<Keyword, ErrorType>(Keyword::Effect)(stream).expect("expected keyword 'effect'");
-    single_tag::<Symbol, ErrorType>(Symbol::Arrow)(next).expect("expected symbol '->'");
+    let (next, _) = single_tag::<Keyword, TestError>(Keyword::Effect)(stream).expect("expected keyword 'effect'");
+    single_tag::<Symbol, TestError>(Symbol::Arrow)(next).expect("expected symbol '->'");
 }

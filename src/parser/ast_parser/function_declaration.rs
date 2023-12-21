@@ -10,7 +10,7 @@ pub fn parse_function_declaration<'a, E>(input: Stream<'a>) -> IResult<Stream<'a
     let (stream, _) = apply((
         skip(single_tag(Keyword::Fn)),
         keep(&mut name, identifier),
-        keep(&mut arguments, parenthesis(separated_list1(list_separator, identifier))),
+        keep(&mut arguments, parenthesis(separated_list0(list_separator, identifier))),
         keep(&mut body, parse_block),
     ))(input)?;
 

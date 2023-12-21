@@ -8,7 +8,7 @@ pub fn parse_function_call_expression<'a, E>(input: Stream<'a>) -> IResult<Strea
 
     let (stream, _) = apply((
         keep(&mut expr, context("bin_op", parse_binary_op_expression)),
-        keep(&mut arguments, opt(parenthesis(separated_list1(list_separator, parse_expression_no_sequencing)))),
+        keep(&mut arguments, opt(parenthesis(separated_list0(list_separator, parse_expression_no_sequencing)))),
     ))(input)?;
 
     let (function, arguments) = (expr.unwrap(), arguments.unwrap());
@@ -29,7 +29,7 @@ pub fn parse_effect_call_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<
         skip(single_tag(Keyword::Perform)),
         cut(apply((
             keep(&mut effect, parse_effect_name),
-            keep(&mut arguments, separated_list1(list_separator, parse_expression_no_sequencing)),
+            keep(&mut arguments, separated_list0(list_separator, parse_expression_no_sequencing)),
         ))),
     ))(input)?;
 

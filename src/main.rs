@@ -2,7 +2,7 @@ pub mod ast;
 pub mod interpreter;
 pub mod parser;
 
-use std::env;
+use std::{env, io::Write};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -42,24 +42,30 @@ fn execute_code_interactive(file: &str) -> Result<(), String> {
     loop {
         while interpreter.has_next() {
             read_line(&stdin, &mut read_buffer)?;
-            if read_buffer == "next" {
+            if read_buffer.contains("next") {
                 interpreter.next()?;
-            } else if read_buffer == "restart" {
+                interpreter.print_expression();
+            } else if read_buffer.contains("restart") {
                 interpreter.restart()?;
+            } else if read_buffer.contains("exit") {
+                return Ok(());
+            } else if read_buffer.contains("continue") {
+                break;
             }
         }
     
         println!("{}", interpreter.run_to_completition()?);
         println!("terminate? [no]");
         read_line(&stdin, &mut read_buffer)?;
-        if read_buffer != "no" {
+        if !read_buffer.contains("no") {
             return Ok(());
         }
     }
 }
 
 fn read_line(stdin: &std::io::Stdin, buffer: &mut String) -> Result<(), String> {
-    println!("> ");
+    print!("> ");
+    std::io::stdout().flush().unwrap();
     buffer.clear();
     stdin.read_line(buffer)
         .map(|_| ())

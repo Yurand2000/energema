@@ -78,3 +78,12 @@ pub fn parse_effect_handler<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, (Ef
 
     Ok( (stream, (effect.unwrap(), arguments.unwrap(), Box::new(body.unwrap()))) )
 }
+
+#[test]
+fn test_effect_handler() {
+    let data = tokenize("my_effect(value0, continuation) { test_fn(unit); continuation(value0) } ").unwrap();
+    let stream = TokenStream::new(&data);
+
+    let result = parse_effect_handler::<TestError>(stream);
+    assert!(result.is_ok(), "{:#?}", result.unwrap_err());
+}
