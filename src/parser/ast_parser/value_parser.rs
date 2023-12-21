@@ -1,16 +1,6 @@
-use nom::{
-    IResult,
-    bytes::complete::*,
-    branch::*,
-    sequence::*,
-    combinator::*,
-    multi::*,
-    InputIter,
-};
-use crate::ast::*;
-use super::tokens::{TokenStream, LocatedToken, Token, TokenType};
+use super::*;
 
-fn value_parser(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Value> {
+pub fn value_parser(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Value> {
     alt((
         value(Value::ULiteral, tag(tokens![TokenType::UnitLiteral])),
         map(tag(tokens![TokenType::BoolLiteral]), |tokens: TokenStream<LocatedToken>| {

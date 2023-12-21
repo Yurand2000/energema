@@ -1,8 +1,7 @@
-use nom::{IResult, Parser};
+use nom::IResult;
 use nom::character::complete::char;
 
 use crate::parser::tokenizer::*;
-use crate::parser::utils::*;
 
 use super::Span;
 
