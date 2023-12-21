@@ -1,6 +1,6 @@
 use super::*;
 
-pub fn value_parser(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Value> {
+pub fn parse_value(input: TokenStream<LocatedToken>) -> IResult<TokenStream<LocatedToken>, Value> {
     alt((
         value(Value::ULiteral, tag(tokens![TokenType::UnitLiteral])),
         map(tag(tokens![TokenType::BoolLiteral]), |tokens: TokenStream<LocatedToken>| {
