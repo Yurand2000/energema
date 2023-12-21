@@ -14,33 +14,47 @@ pub struct Declarations {
     native_functions: HashMap<Identifier, NativeFun>
 }
 
-struct Environment {
+pub struct Interpreter {
     declarations: Declarations,
     stacks: Vec<EnvBlock>,
     expression: IExpression,
 }
 
-impl Environment {
-    pub fn new(declarations: Declarations, expression: Expression) -> Self {
-        Self { declarations, stacks: Vec::new(), expression: expression.into() }
+impl Interpreter {
+    pub fn new(declarations: Declarations) -> Self {
+        Self { declarations, stacks: Vec::new(), expression: IExpression::Value(Box::new(IValue::ULiteral)) }
     }
 
-    pub fn next(mut self) -> Result<Self, String> {
-        self.expression = Self::interpret_next(&self.declarations, self.expression, &mut self.stacks)?;
-        Ok(self)
+    pub fn next(&mut self) -> Result<(), String> {
+        let mut old_expression = IExpression::Value(Box::new(IValue::ULiteral));
+        std::mem::swap(&mut self.expression, &mut old_expression);
+        self.expression = Self::interpret_next(&self.declarations, old_expression, &mut self.stacks)?;
+        Ok(())
+    }
+
+    pub fn print_expression(&self) {
+        println!("{:#?}", self.expression);
     }
 
     pub fn has_next(&self) -> bool {
         if let IExpression::Value(_) = &self.expression { false } else { true }
     }
 
-    pub fn finish(mut self) -> Result<IValue, String> {
+    pub fn restart(&mut self) -> Result<(), String> {
+        let Some(main) = self.declarations.find_main_function() else { return Err(format!("Main function not found!")); };
+        self.expression = (*main.expression).into();
+        Ok(())
+    }
+
+    pub fn run_to_completition(&mut self) -> Result<String, String> {
         while self.has_next() {
-            self = self.next()?;
+            self.next()?;
         }
 
-        let IExpression::Value(val) = self.expression else { panic!("unexpected panic! [0]") };
-        Ok(*val)
+        let mut old_expression = IExpression::Value(Box::new(IValue::ULiteral));
+        std::mem::swap(&mut self.expression, &mut old_expression);
+        let IExpression::Value(val) = old_expression else { panic!("unexpected panic. Unwrapping a non-value expression!") };
+        Ok(format!("Program returned {}", self.declarations.value_to_string(*val)))
     }
 
     fn interpret_next(defs: &Declarations, expr: IExpression, stacks: &mut Vec<EnvBlock>) -> Result<IExpression, String> {
@@ -57,9 +71,7 @@ impl Environment {
                 Self::interpret_if(defs, (guard, then_b, else_b), stacks),
             IExpression::While { guard, block } =>
                 Self::interpret_while(defs, (guard, block), stacks),
-            IExpression::ValueCall { expression } =>
-                Self::interpret_value_call(defs, expression, stacks),
-            IExpression::FuntionCall { function, arguments } =>
+            IExpression::FunctionCall { function, arguments } =>
                 Self::interpret_fn_call(defs, (function, arguments), stacks),
             IExpression::EffectCall { effect, arguments } =>
                 Self::interpret_effect_call(defs, (effect, arguments), stacks),
@@ -163,45 +175,85 @@ impl Environment {
         Ok(IExpression::If { guard, then_b, else_b })
     }
 
-    fn interpret_fn_call(defs: &Declarations, (fn_name, arguments): (Identifier, Vec<IExpression>), stacks: &mut Vec<EnvBlock>) -> Result<IExpression, String> {
+    fn interpret_fn_call(defs: &Declarations, (function, arguments): (Box<IExpression>, Vec<IExpression>), stacks: &mut Vec<EnvBlock>) -> Result<IExpression, String> {
+        match *function {
+            IExpression::Value(_) => (),
+            IExpression::EffectHandling { effect, arguments: eff_arguments, computation, environment } => {
+                return Ok(IExpression::EffectHandling { effect, arguments: eff_arguments, environment,
+                    computation: Box::new(IExpression::FunctionCall { function: computation, arguments })
+                });
+            },
+            _ => {
+                let res = Self::interpret_next(defs, *function, stacks)?;
+                return Ok(IExpression::FunctionCall { function: Box::new(res), arguments });
+            }
+        };
+        
         let (effect_data, arguments) = Self::export_fn_args_effect(arguments);
         if let Some((effect, eff_arguments, eff_environment)) = effect_data {
             Ok(IExpression::EffectHandling { effect, arguments: eff_arguments, environment: eff_environment,
-                computation: Box::new(IExpression::FuntionCall { function: fn_name, arguments })
+                computation: Box::new(IExpression::FunctionCall { function, arguments })
             })
         } else {
             let (arguments, reduced) = Self::interpret_fn_args(defs, arguments, stacks)?;
             if reduced {
-                match defs.find_function(&fn_name) {
-                    (Some(function), _) => {
-                        if function.arguments.len() != arguments.len() {
-                            Err(
-                                format!("Argument number mismatch for function: {}. Expected {} arguments, but found {}.",
-                                function.name, function.arguments.len(), arguments.len())
-                            )?;
-                        }
-        
-                        let arguments = Self::fn_args_to_values(arguments);
-        
-                        Self::push_block(stacks);
-                        for (id, value) in function.arguments.iter().zip(arguments.into_iter()) {
-                            Self::new_identifier(id, value, stacks);
-                        }
-        
-                        Ok(IExpression::Block(function.expression.clone().into()))
+                let IExpression::Value(fn_obj) = *function else { return Err(format!("Function expression is not a value")); };
+                match *fn_obj {
+                    IValue::Var(fn_name) => {
+                        Self::execute_function_from_environment(defs, (fn_name, arguments), stacks)
                     },
-                    (None, Some(native_function)) => {
-                        let arguments = Self::fn_args_to_values(arguments);
-
-                        native_function.0(arguments)
-                            .map(|value| IExpression::Value(Box::new(value)))
+                    IValue::Continuation { expression, previous_environment, call_stack } => {
+                        Self::execute_function_from_continuation(defs, (expression, previous_environment, call_stack, arguments), stacks)
                     },
-                    _ => Err(format!("Cannot find function with name: {}", fn_name))
-                }
+                    _ => {
+                        Err(format!("Function expression must either be an identifier or a continuation"))
+                    }
+                }                
             } else {
-                Ok(IExpression::FuntionCall { function: fn_name, arguments })
+                Ok(IExpression::FunctionCall { function, arguments })
             }
         }
+    }
+
+    fn execute_function_from_environment(defs: &Declarations, (fn_name, arguments): (Identifier, Vec<IExpression>), stacks: &mut Vec<EnvBlock>) -> Result<IExpression, String> {
+        match defs.find_function(&fn_name) {
+            (Some(function), _) => {
+                if function.arguments.len() != arguments.len() {
+                    Err(
+                        format!("Argument number mismatch for function: {}. Expected {} arguments, but found {}.",
+                        function.name, function.arguments.len(), arguments.len())
+                    )?;
+                }
+                    
+                let arguments = Self::fn_args_to_values(arguments);
+                    
+                Self::push_block(stacks);
+                for (id, value) in function.arguments.iter().zip(arguments.into_iter()) {
+                    Self::new_identifier(id, value, stacks);
+                }
+                    
+                Ok(IExpression::Block(function.expression.clone().into()))
+            },
+            (None, Some(native_function)) => {
+                let arguments = Self::fn_args_to_values(arguments);
+            
+                native_function.0(arguments)
+                    .map(|value| IExpression::Value(Box::new(value)))
+            },
+            _ => Err(format!("Cannot find function with name: {}", fn_name))
+        }
+    }
+
+    fn execute_function_from_continuation(_defs: &Declarations, (expr, previous_environment, call_stack, arguments): (Box<IExpression>, Vec<EnvBlock>, Vec<ActivationRecord>, Vec<IExpression>), stacks: &mut Vec<EnvBlock>) -> Result<IExpression, String> {
+        if !arguments.is_empty() {
+            return Err(format!("Argument number mismatch for continuation: Expected 0 arguments, but found {}.", arguments.len()));
+        }
+        
+        Self::attach_blocks(stacks, call_stack);
+        Self::restore_environment(stacks, previous_environment);
+        Self::push_block(stacks);
+
+        Ok(IExpression::Block(expr))
     }
 
     fn interpret_fn_args(defs: &Declarations, arguments: Vec<IExpression>, stacks: &mut Vec<EnvBlock>) -> Result<(Vec<IExpression>, bool), String> {
@@ -416,29 +468,6 @@ impl Environment {
         }
     }
 
-    fn interpret_value_call(defs: &Declarations, expr: Box<IExpression>, stacks: &mut Vec<EnvBlock>) -> Result<IExpression, String> {
-        match *expr {
-            IExpression::Value(value) => {
-                match *value {
-                    IValue::Continuation { expression, previous_environment, call_stack } => {
-                        Self::attach_blocks(stacks, call_stack);
-                        Self::restore_environment(stacks, previous_environment);
-                        Self::push_block(stacks);
-
-                        Ok(IExpression::Block(expression))
-                    },
-                    val => {
-                        Err(format!("Value calls can only be performed on continuations, got: {:?}", Self::value_type(&val, stacks)))
-                    }
-                }
-            },
-            _ => {
-                let res = Self::interpret_next(defs, *expr, stacks)?;
-                Ok(IExpression::ValueCall { expression: Box::new(res) })
-            }
-        }
-    }
-
     fn value_type(value: &IValue, stacks: &Vec<EnvBlock>) -> Type {
         match value {
             IValue::ULiteral => Type::Unit,
@@ -531,13 +560,6 @@ impl Declarations {
         declarations
     }
 
-    pub fn run(&self) -> Result<String, String> {
-        let Some(main) = self.find_main_function() else { return Err(format!("Main function not found!")); };
-        let env = self.prepare_environment(*main.expression);
-        env.finish()
-            .map(|value| format!("Program returned {}", self.value_to_string(value)))
-    }
-
     pub fn find_function(&self, function_name: &Identifier) -> (Option<&FunDeclaration>, Option<&NativeFun>) {
         (self.functions.get(function_name), self.native_functions.get(function_name))
     }
@@ -567,10 +589,6 @@ impl Declarations {
     fn find_main_function(&self) -> Option<FunDeclaration> {
         self.functions.get(&"main".into()).cloned()
             .filter(|main_fn| main_fn.arguments.is_empty())
-    }
-
-    fn prepare_environment(&self, expr: Expression) -> Environment {
-        Environment::new(self.clone(), expr)
     }
 
     fn value_to_string(&self, value: IValue) -> String {
