@@ -20,7 +20,6 @@ pub enum Value {
     ULiteral,
     BLiteral(bool),
     I32Literal(i32),
-    Var(Identifier),
     RuneLiteral(char),
     StringLiteral(String),
     //Fun(Identifier),
@@ -33,6 +32,7 @@ pub enum Value {
 #[derive(PartialEq, Eq)]
 pub enum Expression {
     Value( Box<Value> ),
+    VarValue( Identifier ),
     Sequencing( Box<Expression>, Box<Expression> ),
     Let{ id: Identifier, expression: Box<Expression> },
     If{ guard: Box<Expression>, then_b: Box<Expression>, else_b: Box<Expression> },

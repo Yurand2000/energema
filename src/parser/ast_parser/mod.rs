@@ -105,7 +105,8 @@ fn parse_expression_no_sequencing<'a, E>(input: Stream<'a>) -> IResult<Stream<'a
         parse_effect_call_expression,
         parse_handler_install_expression,
         parse_unary_op_expression,
-        map(parse_value, |value| Expression::Value(Box::new(value))),
+        parse_variable,
+        parse_value_expression,
     ))(input)
 }
 
