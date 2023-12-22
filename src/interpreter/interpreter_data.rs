@@ -38,8 +38,8 @@ impl EnvBlock {
         })
     }
 
-    pub fn get_handler<'a>(&self, defs: &'a Declarations) -> Option<&'a HandlerDeclaration> {
-        defs.find_handler(&self.handler)
+    pub fn get_handler<'a>(&self, env: &'a Environment) -> Option<&'a IHandlerDeclaration> {
+        env.search_handler(&self.handler)
     }
 
     pub fn get_handler_name(&self) -> &Identifier {
@@ -70,15 +70,34 @@ impl EnvBlock {
 #[derive(Debug)]
 #[derive(Clone)]
 #[derive(PartialEq, Eq)]
+pub struct IFunDeclaration {
+    pub name: Identifier,
+    pub arguments: Vec<Identifier>,
+    pub expression: Box<IExpression>,
+}
+
+#[derive(Debug)]
+#[derive(Clone)]
+#[derive(PartialEq, Eq)]
+pub struct IHandlerDeclaration {
+    pub name: Identifier,
+    pub return_handler: Option<(Type, Type, Identifier, Box<IExpression>)>,
+    pub effect_handlers: Vec<(Effect, Vec<Identifier>, Box<IExpression>)>,
+}
+
+#[derive(Debug)]
+#[derive(Clone)]
+#[derive(PartialEq, Eq)]
 pub enum IValue {
     ULiteral,
     BLiteral(bool),
     I32Literal(i32),
-    Var(Identifier),
     RuneLiteral(char),
     StringLiteral(String),
 
     //Non-Constructible by the parser
+    Function(IFunDeclaration),
+    NativeFunction(NativeFun),
     Continuation{ expression: Box<IExpression>, previous_environment: Vec<EnvBlock>, call_stack: Vec<ActivationRecord> },
 }
 
@@ -87,6 +106,7 @@ pub enum IValue {
 #[derive(PartialEq, Eq)]
 pub enum IExpression {
     Value( Box<IValue> ),
+    VarValue( Identifier ),
     Sequencing( Box<IExpression>, Box<IExpression> ),
     Let{ id: Identifier, expression: Box<IExpression> },
     If{ guard: Box<IExpression>, then_b: Box<IExpression>, else_b: Box<IExpression> },
@@ -113,13 +133,20 @@ impl std::fmt::Debug for NativeFun {
     }
 }
 
+impl PartialEq for NativeFun {
+    fn eq(&self, other: &Self) -> bool {
+        std::ptr::eq(&self.0, &other.0) 
+    }
+}
+
+impl Eq for NativeFun {}
+
 impl From<Value> for IValue {
     fn from(value: Value) -> Self {
         match value {
             Value::ULiteral => IValue::ULiteral,
             Value::BLiteral(val) => IValue::BLiteral(val),
             Value::I32Literal(val) => IValue::I32Literal(val),
-            Value::Var(val) => IValue::Var(val),
             Value::RuneLiteral(val) => IValue::RuneLiteral(val),
             Value::StringLiteral(val) => IValue::StringLiteral(val),
         }
@@ -136,6 +163,7 @@ impl From<Expression> for IExpression {
     fn from(expr: Expression) -> Self {
         match expr {
             Expression::Value(val) => IExpression::Value( val.into() ),
+            Expression::VarValue(id) => IExpression::VarValue( id ),
             Expression::Sequencing(curr, next) => IExpression::Sequencing(curr.into(), next.into()),
             Expression::Let { id, expression } => IExpression::Let { id: id, expression: expression.into() },
             Expression::If { guard, then_b, else_b } => IExpression::If { guard: guard.into(), then_b: then_b.into(), else_b: else_b.into() },

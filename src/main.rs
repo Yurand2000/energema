@@ -22,7 +22,7 @@ fn parse_code(file: &str) -> Result<interpreter::Interpreter, String> {
         .and_then(|code| {
             let parsed = parser::parse_code(&code)?;
             let declarations = interpreter::Declarations::new(parsed, interpreter::Declarations::standard_library());
-            Ok(interpreter::Interpreter::new(declarations))
+            Ok(interpreter::Interpreter::new(declarations)?)
         })
 }
 
@@ -38,7 +38,6 @@ fn execute_code_interactive(file: &str) -> Result<(), String> {
     let stdin = std::io::stdin();
     let mut interpreter = parse_code(file)?;
 
-    interpreter.restart()?;
     loop {
         while interpreter.has_next() {
             read_line(&stdin, &mut read_buffer)?;

@@ -11,10 +11,11 @@ impl Declarations {
                         IValue::ULiteral => println!("()"),
                         IValue::BLiteral(value) => println!("{}", value),
                         IValue::I32Literal(value) => println!("{}", value),
-                        IValue::Var(id) => println!("variable {}", id),
                         IValue::RuneLiteral(value) => println!("{}", value),
                         IValue::StringLiteral(value) => println!("{}", value),
                         IValue::Continuation { .. } => println!("computation"),
+                        IValue::Function { .. } => println!("function"),
+                        IValue::NativeFunction { .. } => println!("native function"),
                     };
 
                     Ok(IValue::ULiteral)
