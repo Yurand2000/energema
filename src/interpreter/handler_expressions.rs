@@ -11,16 +11,14 @@ impl Interpreter {
     pub(super) fn interpret_handling(expr: Box<IExpression>, env: &mut Environment) -> Result<IExpression, String> {
         match *expr {
             IExpression::Value(value) => {
-                let handler = env.get_handler()
+                let handler = env.get_handler().cloned()
                     .ok_or(format!("Definition for handler {} not found!", env.get_handler_name()))?;
 
-                if let Some((_, _, id, expr)) = &handler.return_handler {
-                    let id = id.clone();
-                    let iexpr: IExpression = *expr.clone();
-                    env.pop_handler();
+                env.pop_handler();
+                if let Some((_, _, id, expr)) = handler.return_handler {
                     env.push_block();
                     env.new_identifier(&id, *value);
-                    Ok(iexpr)
+                    Ok(*expr)
                 } else {
                     Ok(IExpression::Value(value))
                 }
@@ -36,6 +34,7 @@ impl Interpreter {
 
                 environment.push( env.pop_handler() );
                 if let Some((_, handler_args, handler_body)) = handler_effect {
+                    env.push_block();
                     for (argument_name, argument) in handler_args.iter().zip(arguments.into_iter()) {
                         env.new_identifier(argument_name, argument);
                     }

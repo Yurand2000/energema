@@ -12,7 +12,7 @@ impl Interpreter {
         format!(
             "EXPRESSION:\n{}\n\nHandler Stack size: {}\nCall Stack size: {}",
             self.expression,
-            self.environment.call_stack.len(),
+            self.environment.call_stack.len() - 1,
             self.environment.call_stack.last().unwrap().get_stack_size(),
         )
     }
@@ -23,7 +23,8 @@ impl Interpreter {
 
     pub fn restart(&mut self) -> Result<(), String> {
         let Some(main) = self.environment.get_main_function() else { return Err(format!("Main function not found!")); };
-        self.expression = (*main.expression).into();
+        self.expression = IExpression::Block(main.expression);
+        self.environment.reset();
         Ok(())
     }
 

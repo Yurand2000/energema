@@ -73,10 +73,11 @@ impl Interpreter {
         let arguments = Self::fn_args_to_values(arguments);
         
         env.restore_environment(previous_environment);
-        env.push_block();
 
         if !arguments.is_empty() {
             env.new_identifier_str("$effret", arguments.into_iter().next().unwrap());
+        } else {
+            env.new_identifier_str("$effret", IValue::ULiteral);
         }
 
         Ok(*expr)

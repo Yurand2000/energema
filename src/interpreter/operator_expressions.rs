@@ -52,8 +52,41 @@ impl Interpreter {
 
     fn execute_binary_op(lexpr: IValue, op: BinaryOp, rexpr: IValue, env: &mut Environment) -> Result<IExpression, String> {
         (match (lexpr, op, rexpr) {
+            (IValue::I32Literal(lvalue), BinaryOp::Add, IValue::I32Literal(rvalue)) =>
+                Ok(IValue::I32Literal(lvalue + rvalue)),
+            (IValue::I32Literal(lvalue), BinaryOp::Sub, IValue::I32Literal(rvalue)) =>
+                Ok(IValue::I32Literal(lvalue - rvalue)),
+            (IValue::I32Literal(lvalue), BinaryOp::Mul, IValue::I32Literal(rvalue)) =>
+                Ok(IValue::I32Literal(lvalue * rvalue)),
+            (IValue::I32Literal(lvalue), BinaryOp::Div, IValue::I32Literal(rvalue)) =>
+                Ok(IValue::I32Literal(lvalue / rvalue)),
+            (IValue::I32Literal(lvalue), BinaryOp::Mod, IValue::I32Literal(rvalue)) =>
+                Ok(IValue::I32Literal(lvalue % rvalue)),
+            
             (IValue::BLiteral(lvalue), BinaryOp::LAnd, IValue::BLiteral(rvalue)) =>
                 Ok(IValue::BLiteral(lvalue && rvalue)),
+            (IValue::BLiteral(lvalue), BinaryOp::LOr, IValue::BLiteral(rvalue)) =>
+                Ok(IValue::BLiteral(lvalue || rvalue)),
+            (IValue::BLiteral(lvalue), BinaryOp::LXor, IValue::BLiteral(rvalue)) =>
+                Ok(IValue::BLiteral(lvalue != rvalue)),
+
+            (IValue::BLiteral(lvalue), BinaryOp::Eq, IValue::BLiteral(rvalue)) =>
+                Ok(IValue::BLiteral(lvalue == rvalue)),
+            (IValue::BLiteral(lvalue), BinaryOp::Ne, IValue::BLiteral(rvalue)) =>
+                Ok(IValue::BLiteral(lvalue != rvalue)),
+
+            (IValue::I32Literal(lvalue), BinaryOp::Eq, IValue::I32Literal(rvalue)) =>
+                Ok(IValue::BLiteral(lvalue == rvalue)),
+            (IValue::I32Literal(lvalue), BinaryOp::Ne, IValue::I32Literal(rvalue)) =>
+                Ok(IValue::BLiteral(lvalue != rvalue)),
+            (IValue::I32Literal(lvalue), BinaryOp::Lt, IValue::I32Literal(rvalue)) =>
+                Ok(IValue::BLiteral(lvalue < rvalue)),
+            (IValue::I32Literal(lvalue), BinaryOp::Le, IValue::I32Literal(rvalue)) =>
+                Ok(IValue::BLiteral(lvalue <= rvalue)),
+            (IValue::I32Literal(lvalue), BinaryOp::Gt, IValue::I32Literal(rvalue)) =>
+                Ok(IValue::BLiteral(lvalue > rvalue)),
+            (IValue::I32Literal(lvalue), BinaryOp::Ge, IValue::I32Literal(rvalue)) =>
+                Ok(IValue::BLiteral(lvalue >= rvalue)),
             (lexpr, op, rexpr) => 
                 Err(format!("Unmatched binary operator {:?} to operands of type {:?} and {:?}",
                     op, Self::get_type_of_value(&lexpr, env), Self::get_type_of_value(&rexpr, env)))
