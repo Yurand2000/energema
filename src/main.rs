@@ -43,7 +43,7 @@ fn execute_code_interactive(file: &str) -> Result<(), String> {
             read_line(&stdin, &mut read_buffer)?;
             if read_buffer.contains("next") {
                 interpreter.next()?;
-                interpreter.print_expression();
+                println!("{}", interpreter.print_state());
             } else if read_buffer.contains("restart") {
                 interpreter.restart()?;
             } else if read_buffer.contains("exit") {
@@ -59,6 +59,8 @@ fn execute_code_interactive(file: &str) -> Result<(), String> {
         if !read_buffer.contains("no") {
             return Ok(());
         }
+
+        interpreter.restart()?;
     }
 }
 

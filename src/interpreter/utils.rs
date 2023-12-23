@@ -8,8 +8,13 @@ impl Interpreter {
         Ok(())
     }
 
-    pub fn print_expression(&self) {
-        println!("{}", self.expression);
+    pub fn print_state(&self) -> String {
+        format!(
+            "EXPRESSION:\n{}\n\nHandler Stack size: {}\nCall Stack size: {}",
+            self.expression,
+            self.environment.call_stack.len(),
+            self.environment.call_stack.last().unwrap().get_stack_size(),
+        )
     }
 
     pub fn has_next(&self) -> bool {

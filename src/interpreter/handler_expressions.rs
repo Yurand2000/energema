@@ -3,7 +3,9 @@ use super::*;
 impl Interpreter {
     pub(super) fn interpret_handler_install((handler, computation): (Identifier, Box<IExpression>), env: &mut Environment) -> Result<IExpression, String> {
         env.push_handler(handler);
-        Ok(IExpression::Handling(computation))
+        Ok(IExpression::Handling(
+            Box::new(IExpression::Block(computation))
+        ))
     }
 
     pub(super) fn interpret_handling(expr: Box<IExpression>, env: &mut Environment) -> Result<IExpression, String> {
@@ -14,7 +16,7 @@ impl Interpreter {
 
                 if let Some((_, _, id, expr)) = &handler.return_handler {
                     let id = id.clone();
-                    let iexpr: IExpression = (*expr.clone()).into();
+                    let iexpr: IExpression = *expr.clone();
                     env.pop_handler();
                     env.push_block();
                     env.new_identifier(&id, *value);
@@ -32,22 +34,20 @@ impl Interpreter {
                         handler_effect == &effect
                     }).cloned();
 
+                environment.push( env.pop_handler() );
                 if let Some((_, handler_args, handler_body)) = handler_effect {
-                    let call_stack = env.detach_blocks();
                     for (argument_name, argument) in handler_args.iter().zip(arguments.into_iter()) {
                         env.new_identifier(argument_name, argument);
                     }
 
                     let continuation = IValue::Continuation {
-                        expression: computation,
+                        expression: Box::new(IExpression::Handling(computation)),
                         previous_environment: environment,
-                        call_stack
                     };
                     env.new_identifier_str("continuation", continuation);
 
-                    Ok(IExpression::Block(handler_body.into()))
+                    Ok(IExpression::Block(handler_body))
                 } else {
-                    environment.push( env.pop_handler() );
                     Ok(IExpression::EffectHandling { effect, arguments, environment,
                         computation: Box::new(IExpression::Handling(computation))
                     })

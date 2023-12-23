@@ -29,8 +29,8 @@ impl Interpreter {
                         Self::execute_function((function, arguments), env),
                     IValue::NativeFunction(native_fun) =>
                         Self::execute_native_function((native_fun, arguments), env),
-                    IValue::Continuation { expression, previous_environment, call_stack } =>
-                        Self::execute_continuation((expression, previous_environment, call_stack, arguments), env),
+                    IValue::Continuation { expression, previous_environment } =>
+                        Self::execute_continuation((expression, previous_environment, arguments), env),
                     _ => {
                         Err(format!("Function expression must either be an identifier or a continuation"))
                     }
@@ -56,7 +56,7 @@ impl Interpreter {
             env.new_identifier(id, value);
         }
             
-        Ok(IExpression::Block(function.expression.clone().into()))
+        Ok(IExpression::Block(function.expression.clone()))
     }
 
     fn execute_native_function((function, arguments): (NativeFun, Vec<IExpression>), _env: &mut Environment) -> Result<IExpression, String> {
@@ -66,13 +66,12 @@ impl Interpreter {
             .map(|value| IExpression::Value(Box::new(value)))
     }
 
-    fn execute_continuation((expr, previous_environment, call_stack, arguments): (Box<IExpression>, Vec<EnvBlock>, Vec<ActivationRecord>, Vec<IExpression>), env: &mut Environment) -> Result<IExpression, String> {
+    fn execute_continuation((expr, previous_environment, arguments): (Box<IExpression>, Vec<EnvBlock>, Vec<IExpression>), env: &mut Environment) -> Result<IExpression, String> {
         if arguments.len() > 1 {
             return Err(format!("Argument number mismatch for continuation: Expected 0 or 1 arguments, but found {}.", arguments.len()));
         }
         let arguments = Self::fn_args_to_values(arguments);
         
-        env.attach_blocks(call_stack);
         env.restore_environment(previous_environment);
         env.push_block();
 
@@ -80,7 +79,7 @@ impl Interpreter {
             env.new_identifier_str("$effret", arguments.into_iter().next().unwrap());
         }
 
-        Ok(IExpression::Handling(Box::new(IExpression::Block(expr))))
+        Ok(*expr)
     }
 
     pub(super) fn interpret_fn_args(arguments: Vec<IExpression>, env: &mut Environment) -> Result<(Vec<IExpression>, bool), String> {

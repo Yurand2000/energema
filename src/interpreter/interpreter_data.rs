@@ -67,6 +67,10 @@ impl EnvBlock {
     pub fn is_empty(&self) -> bool {
         self.stack.is_empty()
     }
+
+    pub fn get_stack_size(&self) -> usize {
+        self.stack.len()
+    }
 }
 
 #[derive(Debug)]
@@ -100,7 +104,7 @@ pub enum IValue {
     //Non-Constructible by the parser
     Function(IFunDeclaration),
     NativeFunction(NativeFun),
-    Continuation{ expression: Box<IExpression>, previous_environment: Vec<EnvBlock>, call_stack: Vec<ActivationRecord> },
+    Continuation{ expression: Box<IExpression>, previous_environment: Vec<EnvBlock> },
 }
 
 #[derive(Debug)]
