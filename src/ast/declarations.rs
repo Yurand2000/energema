@@ -33,5 +33,5 @@ pub struct HandlerDeclaration {
 pub struct  EffectDeclaration {
     pub name: Identifier,
     pub in_types: Vec<Type>,
-    pub out_type: Type,
+    pub out_type: Option<Type>,
 }

@@ -67,14 +67,18 @@ impl Interpreter {
     }
 
     fn execute_continuation((expr, previous_environment, call_stack, arguments): (Box<IExpression>, Vec<EnvBlock>, Vec<ActivationRecord>, Vec<IExpression>), env: &mut Environment) -> Result<IExpression, String> {
-        if !arguments.is_empty() {
-            return Err(format!("Argument number mismatch for continuation: Expected 0 arguments, but found {}.", arguments.len()));
+        if arguments.len() > 1 {
+            return Err(format!("Argument number mismatch for continuation: Expected 0 or 1 arguments, but found {}.", arguments.len()));
         }
+        let arguments = Self::fn_args_to_values(arguments);
         
         env.attach_blocks(call_stack);
         env.restore_environment(previous_environment);
         env.push_block();
-        env.new_identifier_str("$effret", IValue::ULiteral);
+
+        if !arguments.is_empty() {
+            env.new_identifier_str("$effret", arguments.into_iter().next().unwrap());
+        }
 
         Ok(IExpression::Handling(Box::new(IExpression::Block(expr))))
     }
