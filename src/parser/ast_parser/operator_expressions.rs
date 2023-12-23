@@ -4,14 +4,22 @@ pub fn parse_unary_op_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>
     where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
 {
     let mut operator = None;
-    let mut expr = None;
+    let mut expr0 = None;
+    let mut expr1 = None;
 
-    let (stream, _) = apply((
-        keep(&mut operator, parse_unary_operator),
-        cut(keep(&mut expr, parse_expression_no_sequencing)),
+    let (stream, _) = alt((
+        apply((
+            keep(&mut operator, parse_unary_operator),
+            cut(keep(&mut expr0, context("fn_call", parse_function_call_expression))),
+        )),
+        keep(&mut expr1, context("fn_call", parse_function_call_expression)),
     ))(input)?;
 
-    Ok((stream, Expression::UnaryOp(operator.unwrap(), Box::new(expr.unwrap()))))
+    if expr1.is_some() {
+        Ok((stream, expr1.unwrap()))
+    } else {
+        Ok((stream, Expression::UnaryOp(operator.unwrap(), Box::new(expr0.unwrap()))))
+    }
 }
 
 pub fn parse_binary_op_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expression, E>
@@ -23,11 +31,11 @@ pub fn parse_binary_op_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a
     let mut rexpr = None;
 
     let (stream, _) = apply((
-        keep(&mut lexpr, context("no_sequencing", parse_expression_no_sequencing)),
+        keep(&mut lexpr, context("unary_op", parse_unary_op_expression)),
         keep(&mut is_binary,
             opt(apply((
-                keep(&mut operator, parse_binary_operator),
-                cut(keep(&mut rexpr, parse_expression_no_sequencing)),
+                keep(&mut operator, context("bin_op", parse_binary_operator)),
+                cut(keep(&mut rexpr, parse_binary_op_expression)),
             )))
         ),
     ))(input)?;

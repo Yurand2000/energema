@@ -10,7 +10,7 @@ pub fn parse_if_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expr
     let (stream, _) = apply((
         skip(single_tag(Keyword::If)),
         cut(apply((
-            keep(&mut guard, parse_expression_no_sequencing),
+            keep(&mut guard, parse_binary_op_expression),
             keep(&mut then_b, parse_block),
             skip(single_tag(Keyword::Else)),
             keep(&mut else_b, parse_block),
@@ -29,7 +29,7 @@ pub fn parse_while_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, E
     let (stream, _) = apply((
         skip(single_tag(Keyword::While)),
         cut(apply((
-            keep(&mut guard, parse_expression),
+            keep(&mut guard, parse_binary_op_expression),
             keep(&mut block, parse_block),
         ))),
     ))(input)?;

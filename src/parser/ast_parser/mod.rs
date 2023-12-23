@@ -83,7 +83,7 @@ fn parse_sequencing_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, 
 
     let (stream, _) = apply((
         keep(&mut lexpr, context("let", parse_let_expression)),
-        keep(&mut rexpr, opt(second(sequencing_separator, cut(parse_expression)))),
+        keep(&mut rexpr, opt(second(single_tag(Symbol::Semicolon), cut(parse_expression)))),
     ))(input)?;
 
     let (lexpr, rexpr) = (lexpr.unwrap(), rexpr.unwrap());
@@ -92,27 +92,6 @@ fn parse_sequencing_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, 
     } else {
         Ok((stream, lexpr))
     }
-}
-
-fn parse_expression_no_sequencing<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expression, E>
-    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
-{
-    alt((
-        parenthesis(parse_expression),
-        parse_if_expression,
-        parse_while_expression,
-        parse_effect_call_expression,
-        parse_handler_install_expression,
-        parse_unary_op_expression,
-        parse_variable,
-        parse_value_expression,
-    ))(input)
-}
-
-fn sequencing_separator<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Stream<'a>, E>
-    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
-{
-    single_tag(Symbol::Semicolon)(input)
 }
 
 fn parse_let_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expression, E>
@@ -128,10 +107,10 @@ fn parse_let_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Express
             cut(apply((
                 keep(&mut id, identifier),
                 skip(single_tag(Symbol::Equal)),
-                keep(&mut expr0, context("fn_call", parse_function_call_expression)),
+                keep(&mut expr0, context("binary_op", parse_binary_op_expression)),
             )))
         )),
-        keep(&mut expr1, context("fn_call", parse_function_call_expression)),
+        keep(&mut expr1, context("binary_op", parse_binary_op_expression)),
     ))(input)?;
 
     if expr1.is_some() {
@@ -139,4 +118,18 @@ fn parse_let_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Express
     } else {
         Ok((stream, Expression::Let { id: id.unwrap(), expression: Box::new(expr0.unwrap()) }))
     }
+}
+
+fn parse_expression_no_sequencing<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expression, E>
+    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
+{
+    alt((
+        parenthesis(parse_expression),
+        parse_if_expression,
+        parse_while_expression,
+        parse_effect_call_expression,
+        parse_handler_install_expression,
+        parse_variable,
+        parse_value_expression,
+    ))(input)
 }
