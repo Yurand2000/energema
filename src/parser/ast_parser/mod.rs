@@ -37,6 +37,7 @@ use value_parser::*;
 use super::tokenizer::tokenize;
 
 type Stream<'a> = TokenStream<'a, LocatedToken>;
+mod stream_display;
 
 #[cfg(test)]
 type TestError<'a> = nom::error::Error<Stream<'a>>;
@@ -53,8 +54,8 @@ pub fn parse_code(code: &str) -> Result<Vec<Declaration>, String> {
 
     match result {
         Ok(_) => Ok(declarations.unwrap()),
-        Err(Err::Error(err)) => Err(format!("{:#?}", err)),
-        Err(Err::Failure(err)) => Err(format!("{:#?}", err)),
+        Err(Err::Error(err)) => Err(format!("{}", err)),
+        Err(Err::Failure(err)) => Err(format!("{}", err)),
         Err(Err::Incomplete(_)) => todo!(),
     }
 }

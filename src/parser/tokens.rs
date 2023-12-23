@@ -133,6 +133,14 @@ impl LocatedToken {
     pub fn get_token(&self) -> &Token {
         &self.token
     }
+
+    pub fn get_line(&self) -> u32 {
+        self.line
+    }
+
+    pub fn get_column(&self) -> u32 {
+        self.column
+    }
 }
 
 impl PartialEq<Token> for LocatedToken {

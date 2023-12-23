@@ -38,14 +38,34 @@ pub fn parse_effect_name<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Effect
 pub fn parse_type<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Type, E>
     where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
 {
+    let mut typ = None;
+    let mut effects = None;
+
+    let (stream, _) = context("type", apply((
+        keep(&mut typ, parse_type_no_computation),
+        keep(&mut effects, opt(parse_computation_effects)),
+    )))(input)?;
+
+    match effects.unwrap() {
+        Some(effects) => {
+            let computation_type = ComputationType{ typ: typ.unwrap(), effects };
+            Ok((stream, Type::Computation(Box::new(computation_type))))
+        },
+        None => Ok((stream, typ.unwrap())),
+    }
+}
+
+pub fn parse_type_no_computation<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Type, E>
+    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
+{
     alt((
+        parenthesis(parse_type),
         value(Type::Void, single_tag(Symbol::Tilde)),
         value(Type::Unit, single_tag(TokenType::UnitLiteral)),
         value(Type::Bool, specific_identifier("bool")),
         value(Type::I32, specific_identifier("i32")),
         value(Type::Rune, specific_identifier("rune")),
         value(Type::String, specific_identifier("string")),
-        map(parse_computation_type, |typ| Type::Computation(Box::new(typ))),
         parse_function_type,
         parse_handler_type
     ))(input)
@@ -58,7 +78,7 @@ pub fn parse_computation_type<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, C
     let mut effects = None;
 
     let (stream, _) = apply((
-        keep(&mut typ, parse_type),
+        keep(&mut typ, parse_type_no_computation),
         keep(&mut effects, parse_computation_effects),
     ))(input)?;
 
