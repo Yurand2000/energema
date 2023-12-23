@@ -1,5 +1,5 @@
 use nom::Err;
-use nom::error::{ParseError, VerboseError, convert_error, context, ContextError};
+use nom::error::{ParseError, VerboseError, context, ContextError};
 use nom::{
     IResult,
     bytes::complete::*,

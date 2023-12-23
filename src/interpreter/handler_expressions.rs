@@ -1,22 +1,23 @@
 use super::*;
 
 impl Interpreter {
-    pub fn interpret_handler_install((handler, computation): (Identifier, Box<IExpression>), env: &mut Environment) -> Result<IExpression, String> {
+    pub(super) fn interpret_handler_install((handler, computation): (Identifier, Box<IExpression>), env: &mut Environment) -> Result<IExpression, String> {
         env.push_handler(handler);
         Ok(IExpression::Handling(computation))
     }
 
-    pub fn interpret_handling(expr: Box<IExpression>, env: &mut Environment) -> Result<IExpression, String> {
+    pub(super) fn interpret_handling(expr: Box<IExpression>, env: &mut Environment) -> Result<IExpression, String> {
         match *expr {
             IExpression::Value(value) => {
                 let handler = env.get_handler()
                     .ok_or(format!("Definition for handler {} not found!", env.get_handler_name()))?;
 
                 if let Some((_, _, id, expr)) = &handler.return_handler {
+                    let id = id.clone();
                     let iexpr: IExpression = (*expr.clone()).into();
                     env.pop_handler();
                     env.push_block();
-                    env.new_identifier(id, *value);
+                    env.new_identifier(&id, *value);
                     Ok(iexpr)
                 } else {
                     Ok(IExpression::Value(value))

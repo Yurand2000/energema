@@ -1,7 +1,7 @@
 use super::*;
 
 impl Interpreter {
-    pub fn interpret_if((guard, then_b, else_b): (Box<IExpression>, Box<IExpression>, Box<IExpression>), env: &mut Environment) -> Result<IExpression, String> {
+    pub(super) fn interpret_if((guard, then_b, else_b): (Box<IExpression>, Box<IExpression>, Box<IExpression>), env: &mut Environment) -> Result<IExpression, String> {
         Ok(match *guard {
             IExpression::Value(value) => {
                 match *value {
@@ -29,7 +29,7 @@ impl Interpreter {
         })
     }
 
-    pub fn interpret_while((guard, block): (Box<IExpression>, Box<IExpression>), _env: &mut Environment) -> Result<IExpression, String> {
+    pub(super) fn interpret_while((guard, block): (Box<IExpression>, Box<IExpression>), _env: &mut Environment) -> Result<IExpression, String> {
         let then_b = Box::new(
             IExpression::Sequencing(
                 block.clone(),

@@ -11,8 +11,8 @@ impl Declarations {
 
         defs.into_iter().for_each(|definition| {
             match definition {
-                Declaration::Function(def) => { declarations.functions.insert(def.name.clone(), def); },
-                Declaration::Handler(def) => { declarations.handlers.insert(def.name.clone(), def); },
+                Declaration::Function(def) => { declarations.functions.insert(def.name.clone(), def.into()); },
+                Declaration::Handler(def) => { declarations.handlers.insert(def.name.clone(), def.into()); },
                 Declaration::Effect(def) => { declarations.effects.insert(def.name.clone(), def); },
             }
         });

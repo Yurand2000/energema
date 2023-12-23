@@ -1,7 +1,7 @@
 use super::*;
 
 impl Interpreter {
-    pub fn interpret_effect_call((effect, arguments): (Effect, Vec<IExpression>), env: &mut Environment) -> Result<IExpression, String> {
+    pub(super) fn interpret_effect_call((effect, arguments): (Effect, Vec<IExpression>), env: &mut Environment) -> Result<IExpression, String> {
         let (effect_data, arguments) = Self::export_fn_args_effect(arguments);
         if let Some((out_effect, out_arguments, out_environment)) = effect_data {
             Ok(IExpression::EffectHandling { effect: out_effect, arguments: out_arguments, environment: out_environment,

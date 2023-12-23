@@ -1,7 +1,7 @@
 use super::*;
 
 impl Interpreter {
-    pub fn interpret_fn_call((function, arguments): (Box<IExpression>, Vec<IExpression>), env: &mut Environment) -> Result<IExpression, String> {
+    pub(super) fn interpret_fn_call((function, arguments): (Box<IExpression>, Vec<IExpression>), env: &mut Environment) -> Result<IExpression, String> {
         match *function {
             IExpression::Value(_) => (),
             IExpression::EffectHandling { effect, arguments: eff_arguments, computation, environment } => {
@@ -59,7 +59,7 @@ impl Interpreter {
         Ok(IExpression::Block(function.expression.clone().into()))
     }
 
-    fn execute_native_function((function, arguments): (NativeFun, Vec<IExpression>), env: &mut Environment) -> Result<IExpression, String> {
+    fn execute_native_function((function, arguments): (NativeFun, Vec<IExpression>), _env: &mut Environment) -> Result<IExpression, String> {
         let arguments = Self::fn_args_to_values(arguments);
             
         function.0(arguments)
@@ -78,7 +78,7 @@ impl Interpreter {
         Ok(IExpression::Block(expr))
     }
 
-    pub fn interpret_fn_args(arguments: Vec<IExpression>, env: &mut Environment) -> Result<(Vec<IExpression>, bool), String> {
+    pub(super) fn interpret_fn_args(arguments: Vec<IExpression>, env: &mut Environment) -> Result<(Vec<IExpression>, bool), String> {
         let mut reduced = true;
         arguments.into_iter()
             .fold(Ok(Vec::new()), |vect, expr| {
@@ -104,7 +104,7 @@ impl Interpreter {
             }).map(|vec| (vec, reduced))
     }
 
-    pub fn export_fn_args_effect(arguments: Vec<IExpression>) -> (Option<(Effect, Vec<IValue>, Vec<EnvBlock>)>, Vec<IExpression>) {
+    pub(super) fn export_fn_args_effect(arguments: Vec<IExpression>) -> (Option<(Effect, Vec<IValue>, Vec<EnvBlock>)>, Vec<IExpression>) {
         let mut reduced = true;
         let mut out_effect = None;
         let arguments = arguments.into_iter()

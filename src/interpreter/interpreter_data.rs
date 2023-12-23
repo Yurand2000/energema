@@ -38,7 +38,7 @@ impl EnvBlock {
         })
     }
 
-    pub fn get_handler<'a>(&self, env: &'a Environment) -> Option<&'a IHandlerDeclaration> {
+    pub(super) fn get_handler<'a>(&self, env: &'a Environment) -> Option<&'a IHandlerDeclaration> {
         env.search_handler(&self.handler)
     }
 
@@ -186,5 +186,21 @@ impl From<Box<Expression>> for Box<IExpression> {
 impl IExpression {
     fn vector(exprs: Vec<Expression>) -> Vec<IExpression> {
         exprs.into_iter().map(|expr| expr.into()).collect()
+    }
+}
+
+impl From<FunDeclaration> for IFunDeclaration {
+    fn from(value: FunDeclaration) -> Self {
+        IFunDeclaration { name: value.name, arguments: value.arguments, expression: value.expression.into() }
+    }
+}
+
+impl From<HandlerDeclaration> for IHandlerDeclaration {
+    fn from(value: HandlerDeclaration) -> Self {
+        IHandlerDeclaration {
+            name: value.name,
+            return_handler: value.return_handler.map(|(a,b,c,expr)| (a,b,c,expr.into())),
+            effect_handlers: value.effect_handlers.into_iter().map(|(a,b,expr)| (a,b,expr.into())).collect()
+        }
     }
 }

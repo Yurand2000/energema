@@ -1,7 +1,7 @@
 use super::*;
 
 impl Interpreter {
-    pub fn interpret_unary_op((op, expr): (UnaryOp, Box<IExpression>), env: &mut Environment) -> Result<IExpression, String> {
+    pub(super) fn interpret_unary_op((op, expr): (UnaryOp, Box<IExpression>), env: &mut Environment) -> Result<IExpression, String> {
         match *expr {
             IExpression::Value(value) =>
                 Self::execute_unary_op(op, *value, env),
@@ -24,7 +24,7 @@ impl Interpreter {
         }
     }
 
-    pub fn interpret_binary_op((lexpr, op, rexpr): (Box<IExpression>, BinaryOp, Box<IExpression>), env: &mut Environment) -> Result<IExpression, String> {
+    pub(super) fn interpret_binary_op((lexpr, op, rexpr): (Box<IExpression>, BinaryOp, Box<IExpression>), env: &mut Environment) -> Result<IExpression, String> {
         match (*lexpr, *rexpr) {
             (IExpression::Value(lvalue), IExpression::Value(rvalue)) => {
                 Self::execute_binary_op(*lvalue, op, *rvalue, env)

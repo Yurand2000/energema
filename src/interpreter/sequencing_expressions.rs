@@ -1,7 +1,7 @@
 use super::*;
 
 impl Interpreter {
-    pub fn interpret_sequencing((expr, succ): (Box<IExpression>, Box<IExpression>), env: &mut Environment) -> Result<IExpression, String> {
+    pub(super) fn interpret_sequencing((expr, succ): (Box<IExpression>, Box<IExpression>), env: &mut Environment) -> Result<IExpression, String> {
         Ok(match *expr {
             IExpression::Value(_) => *succ,
             IExpression::EffectHandling { effect, arguments, computation, environment } =>
@@ -15,7 +15,7 @@ impl Interpreter {
         })
     }
 
-    pub fn interpret_block(expr: Box<IExpression>, env: &mut Environment) -> Result<IExpression, String> {
+    pub(super) fn interpret_block(expr: Box<IExpression>, env: &mut Environment) -> Result<IExpression, String> {
         match *expr {
             IExpression::Value(_) => {
                 env.pop_block();
@@ -33,7 +33,7 @@ impl Interpreter {
         }
     }
     
-    pub fn interpret_let((id, expr): (Identifier, Box<IExpression>), env: &mut Environment) -> Result<IExpression, String> {
+    pub(super) fn interpret_let((id, expr): (Identifier, Box<IExpression>), env: &mut Environment) -> Result<IExpression, String> {
         Ok(match *expr {
             IExpression::Value(value) => {
                 env.new_identifier(&id, *value);
