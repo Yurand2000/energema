@@ -207,18 +207,26 @@ impl From<HandlerDeclaration> for IHandlerDeclaration {
     }
 }
 
-struct Pad<T>(T);
+struct Pad<T>(T, bool);
 
 impl<T: std::fmt::Display> std::fmt::Display for Pad<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let text = format!("{}", self.0);
-        f.write_str(&text.lines().fold(String::new(),
+        let mut lines = text.lines();
+        let mut text = String::new();
+        if self.1 { text.push_str("- "); }
+        else { text.push_str("  "); }
+        text.push_str(lines.next().unwrap());
+        text.push('\n');
+        let mut text = lines.fold(text,
             |mut accum, line| {
                 accum.push_str("  ");
                 accum.push_str(line);
                 accum.push('\n');
                 accum
-        }))
+        });
+        text.pop();
+        f.write_str(&text)
     }
 }
 
@@ -236,29 +244,29 @@ impl std::fmt::Display for IExpression {
             IExpression::VarValue(var) =>
                 f.write_fmt(format_args!("Var({})", var.0)),
             IExpression::Sequencing(pre, post) =>
-                f.write_fmt(format_args!("Sequencing(\n{}, \n{}\n)", Pad(pre), Pad(post))),
+                f.write_fmt(format_args!("Sequencing(\n{}, \n{}\n)", Pad(pre, true), Pad(post, true))),
             IExpression::Let { id, expression } =>
-                f.write_fmt(format_args!("Let {} =\n{}", id.0, Pad(expression))),
+                f.write_fmt(format_args!("Let {} =\n{}", id.0, Pad(expression, false))),
             IExpression::If { guard, then_b, else_b } =>
-                f.write_fmt(format_args!("If {}\n{}\nelse\n{}", guard, Pad(then_b), Pad(else_b))),
+                f.write_fmt(format_args!("If {}\n{}\nelse\n{}", guard, Pad(then_b, true), Pad(else_b, true))),
             IExpression::While { guard, block } =>
-                f.write_fmt(format_args!("While {}\n{}", guard, Pad(block))),
+                f.write_fmt(format_args!("While {}\n{}", guard, Pad(block, false))),
             IExpression::FunctionCall { function, arguments } =>
-                f.write_fmt(format_args!("Call {}\n{:#?}", function, Pad(arguments))),
+                f.write_fmt(format_args!("Call {}\n{:#?}", function, Pad(arguments, false))),
             IExpression::EffectCall { effect, arguments } =>
-                f.write_fmt(format_args!("EffCall {:?}\n{:#?}", effect, Pad(arguments))),
+                f.write_fmt(format_args!("EffCall {:?}\n{:#?}", effect, Pad(arguments, false))),
             IExpression::HandlingInstall { handler, computation } =>
-                f.write_fmt(format_args!("With {}() handle\n{}", handler.0, Pad(computation))),
+                f.write_fmt(format_args!("With {}() handle\n{}", handler.0, Pad(computation, false))),
             IExpression::UnaryOp(op, expr) =>
                 f.write_fmt(format_args!("{:?}{}", op, expr)),
             IExpression::BinaryOp(lexpr, op, rexpr) =>
-                f.write_fmt(format_args!("{:?}(\n{}, \n{}\n)", op, Pad(lexpr), Pad(rexpr))),
+                f.write_fmt(format_args!("{:?}(\n{}, \n{}\n)", op, Pad(lexpr, true), Pad(rexpr, true))),
             IExpression::Block(expr) =>
-                f.write_fmt(format_args!("Block {{\n{}\n}}", Pad(expr))),
+                f.write_fmt(format_args!("Block {{\n{}\n}}", Pad(expr, false))),
             IExpression::Handling(expr) =>
-                f.write_fmt(format_args!("Handling {{\n{}\n}}", Pad(expr))),
+                f.write_fmt(format_args!("Handling {{\n{}\n}}", Pad(expr, false))),
             IExpression::EffectHandling { effect, arguments, computation, .. } =>
-                f.write_fmt(format_args!("Effect {:?}({:?}) {{\n{}\n}}", effect, arguments, Pad(computation))),
+                f.write_fmt(format_args!("EffectHandling {:?}{:?} {{\n{}\n}}", effect, arguments, Pad(computation, false))),
         }
     }
 }
