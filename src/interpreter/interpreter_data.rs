@@ -1,3 +1,5 @@
+use std::fmt::{Debug, Pointer};
+
 use super::*;
 
 #[derive(Debug)]
@@ -202,5 +204,88 @@ impl From<HandlerDeclaration> for IHandlerDeclaration {
             return_handler: value.return_handler.map(|(a,b,c,expr)| (a,b,c,expr.into())),
             effect_handlers: value.effect_handlers.into_iter().map(|(a,b,expr)| (a,b,expr.into())).collect()
         }
+    }
+}
+
+struct Pad<T>(T);
+
+impl<T: std::fmt::Display> std::fmt::Display for Pad<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let text = format!("{}", self.0);
+        f.write_str(&text.lines().fold(String::new(),
+            |mut accum, line| {
+                accum.push_str("  ");
+                accum.push_str(line);
+                accum.push('\n');
+                accum
+        }))
+    }
+}
+
+impl<T: std::fmt::Debug> std::fmt::Debug for Pad<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("  {:?}", self.0))
+    }
+}
+
+impl std::fmt::Display for IExpression {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            IExpression::Value(value) =>
+                f.write_fmt(format_args!("Value({})", value)),
+            IExpression::VarValue(var) =>
+                f.write_fmt(format_args!("Var({})", var.0)),
+            IExpression::Sequencing(pre, post) =>
+                f.write_fmt(format_args!("Sequencing(\n{}, \n{}\n)", Pad(pre), Pad(post))),
+            IExpression::Let { id, expression } =>
+                f.write_fmt(format_args!("Let {} =\n{}", id.0, Pad(expression))),
+            IExpression::If { guard, then_b, else_b } =>
+                f.write_fmt(format_args!("If {}\n{}\nelse\n{}", guard, Pad(then_b), Pad(else_b))),
+            IExpression::While { guard, block } =>
+                f.write_fmt(format_args!("While {}\n{}", guard, Pad(block))),
+            IExpression::FunctionCall { function, arguments } =>
+                f.write_fmt(format_args!("Call {}\n{:#?}", function, Pad(arguments))),
+            IExpression::EffectCall { effect, arguments } =>
+                f.write_fmt(format_args!("EffCall {:?}\n{:#?}", effect, Pad(arguments))),
+            IExpression::HandlingInstall { handler, computation } =>
+                f.write_fmt(format_args!("With {}() handle\n{}", handler.0, Pad(computation))),
+            IExpression::UnaryOp(op, expr) =>
+                f.write_fmt(format_args!("{:?}{}", op, expr)),
+            IExpression::BinaryOp(lexpr, op, rexpr) =>
+                f.write_fmt(format_args!("{:?}(\n{}, \n{}\n)", op, Pad(lexpr), Pad(rexpr))),
+            IExpression::Block(expr) =>
+                f.write_fmt(format_args!("Block {{\n{}\n}}", Pad(expr))),
+            IExpression::Handling(expr) =>
+                f.write_fmt(format_args!("Handling {{\n{}\n}}", Pad(expr))),
+            IExpression::EffectHandling { effect, arguments, computation, .. } =>
+                f.write_fmt(format_args!("Effect {:?}({:?}) {{\n{}\n}}", effect, arguments, Pad(computation))),
+        }
+    }
+}
+
+impl std::fmt::Display for IValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            IValue::ULiteral => f.write_str("unit"),
+            IValue::BLiteral(value) => f.write_fmt(format_args!("{}", value)),
+            IValue::I32Literal(value) => f.write_fmt(format_args!("{}", value)),
+            IValue::RuneLiteral(value) => f.write_fmt(format_args!("'{}'", value)),
+            IValue::StringLiteral(value) => f.write_fmt(format_args!("\"{}\"", value)),
+            IValue::Function(value) => f.write_fmt(format_args!("{}", value)),
+            IValue::NativeFunction(value) => f.write_fmt(format_args!("{}", value)),
+            IValue::Continuation { .. } => f.write_str("continuation"),
+        }
+    }
+}
+
+impl std::fmt::Display for IFunDeclaration {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("fn {}", self.name))
+    }
+}
+
+impl std::fmt::Display for NativeFun {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("native fn")
     }
 }

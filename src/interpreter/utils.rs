@@ -9,7 +9,7 @@ impl Interpreter {
     }
 
     pub fn print_expression(&self) {
-        println!("{:#?}", self.expression);
+        println!("{}", self.expression);
     }
 
     pub fn has_next(&self) -> bool {
