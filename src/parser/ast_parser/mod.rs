@@ -82,7 +82,7 @@ fn parse_sequencing_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, 
     let mut rexpr = None;
 
     let (stream, _) = apply((
-        keep(&mut lexpr, context("fn_call", parse_function_call_expression)),
+        keep(&mut lexpr, context("let", parse_let_expression)),
         keep(&mut rexpr, opt(second(sequencing_separator, cut(parse_expression)))),
     ))(input)?;
 
@@ -99,7 +99,6 @@ fn parse_expression_no_sequencing<'a, E>(input: Stream<'a>) -> IResult<Stream<'a
 {
     alt((
         parenthesis(parse_expression),
-        parse_let_expression,
         parse_if_expression,
         parse_while_expression,
         parse_effect_call_expression,
@@ -120,14 +119,24 @@ fn parse_let_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Express
     where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
 {
     let mut id = None;
-    let mut expr = None;
+    let mut expr0 = None;
+    let mut expr1 = None;
 
-    let (stream, _) = apply((
-        skip(single_tag(Keyword::Let)),
-        keep(&mut id, identifier),
-        skip(single_tag(Symbol::Equal)),
-        keep(&mut expr, parse_expression_no_sequencing),
+    let (stream, _) = alt((
+        apply((
+            skip(single_tag(Keyword::Let)),
+            cut(apply((
+                keep(&mut id, identifier),
+                skip(single_tag(Symbol::Equal)),
+                keep(&mut expr0, context("fn_call", parse_function_call_expression)),
+            )))
+        )),
+        keep(&mut expr1, context("fn_call", parse_function_call_expression)),
     ))(input)?;
 
-    Ok((stream, Expression::Let { id: id.unwrap(), expression: Box::new(expr.unwrap()) }))
+    if expr1.is_some() {
+        Ok((stream, expr1.unwrap()))
+    } else {
+        Ok((stream, Expression::Let { id: id.unwrap(), expression: Box::new(expr0.unwrap()) }))
+    }
 }
