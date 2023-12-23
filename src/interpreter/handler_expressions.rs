@@ -43,7 +43,7 @@ impl Interpreter {
                         previous_environment: environment,
                         call_stack
                     };
-                    env.new_identifier(&"continuation".into(), continuation);
+                    env.new_identifier_str("continuation", continuation);
 
                     Ok(IExpression::Block(handler_body.into()))
                 } else {

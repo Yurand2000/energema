@@ -9,11 +9,15 @@ impl Environment {
 
     pub fn reset(&mut self) {
         self.call_stack.clear();
-        self.call_stack.push(EnvBlock::new(Identifier("default_handler".to_owned())))
+        self.call_stack.push(EnvBlock::new("default_handler".into()))
     }
 
     pub fn new_identifier(&mut self, id: &Identifier, value: IValue) {
         self.call_stack.last_mut().unwrap().new_identifier(id, value);
+    }
+    
+    pub fn new_identifier_str(&mut self, id: &str, value: IValue) {
+        self.call_stack.last_mut().unwrap().new_identifier(&id.into(), value);
     }
 
     pub fn search_identifier(&self, id: &Identifier) -> Option<IValue> {

@@ -74,8 +74,9 @@ impl Interpreter {
         env.attach_blocks(call_stack);
         env.restore_environment(previous_environment);
         env.push_block();
+        env.new_identifier_str("$effret", IValue::ULiteral);
 
-        Ok(IExpression::Block(expr))
+        Ok(IExpression::Handling(Box::new(IExpression::Block(expr))))
     }
 
     pub(super) fn interpret_fn_args(arguments: Vec<IExpression>, env: &mut Environment) -> Result<(Vec<IExpression>, bool), String> {
