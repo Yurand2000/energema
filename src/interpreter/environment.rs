@@ -46,6 +46,14 @@ impl Environment {
         self.declarations.handlers.get(id)
     }
 
+    pub fn search_effect(&self, effect: &Effect) -> Option<&EffectDeclaration> {
+        self.declarations.effects.get(&effect.eff_type)
+    }
+
+    pub fn attach_block(&mut self, record: ActivationRecord) {
+        self.call_stack.last_mut().unwrap().attach(record);
+    }
+
     pub fn push_block(&mut self) {
         self.call_stack.last_mut().unwrap().push();
     }
@@ -60,14 +68,6 @@ impl Environment {
 
     pub fn pop_handler(&mut self) -> EnvBlock {
         self.call_stack.pop().unwrap()
-    }
-
-    pub fn detach_blocks(&mut self) -> Vec<ActivationRecord> {
-        self.call_stack.last_mut().unwrap().detach_blocks()
-    }
-
-    pub fn attach_blocks(&mut self, call_stack: Vec<ActivationRecord>) {
-        self.call_stack.last_mut().unwrap().attach_blocks(call_stack);
     }
 
     pub fn restore_environment(&mut self, previous_environment: Vec<EnvBlock>) {

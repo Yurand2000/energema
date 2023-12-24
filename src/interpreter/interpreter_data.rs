@@ -48,6 +48,10 @@ impl EnvBlock {
         &self.handler
     }
 
+    pub fn attach(&mut self, record: ActivationRecord) {
+        self.stack.push(record);
+    }
+
     pub fn push(&mut self) {
         self.stack.push(ActivationRecord::default());
     }
@@ -100,12 +104,11 @@ pub enum IValue {
     I32Literal(i32),
     RuneLiteral(char),
     StringLiteral(String),
-    Closure{ arguments: Vec<Identifier>, computation: Box<IExpression> },
 
     //Non-Constructible by the parser
     Function(IFunDeclaration),
     NativeFunction(NativeFun),
-    Continuation{ expression: Box<IExpression>, previous_environment: Vec<EnvBlock> },
+    Closure{ arguments: Vec<Identifier>, computation: Box<IExpression>, environment: ActivationRecord },
 }
 
 #[derive(Debug)]
@@ -118,9 +121,10 @@ pub enum IExpression {
     Let{ id: Identifier, expression: Box<IExpression> },
     If{ guard: Box<IExpression>, then_b: Box<IExpression>, else_b: Box<IExpression> },
     While{ guard: Box<IExpression>, block: Box<IExpression> },
-    FunctionCall{ function: Box<IExpression>, arguments: Vec<IExpression> },    //substitute with Body constructor
-    EffectCall{ effect: Effect, arguments: Vec<IExpression> },                  //substitute with Value(Var($effret)), transform the expression(from the root) to a continuation value
-    HandlingInstall{ handler: Identifier, computation: Box<IExpression> },      //substitute with Body constructor
+    FunctionCall{ function: Box<IExpression>, arguments: Vec<IExpression> },
+    EffectCall{ effect: Effect, arguments: Vec<IExpression> },                  //substitute with VarValue($effret), transform the expression(from the root) to a continuation value
+    HandlingInstall{ handler: Identifier, computation: Box<IExpression> },      //substitute with Handling(Block(expression))
+    ClosureCreate{ arguments: Vec<Identifier>, computation: Box<IExpression> }, //substitute with Value(Closure)
 
     UnaryOp(UnaryOp, Box<IExpression>),
     BinaryOp(Box<IExpression>, BinaryOp, Box<IExpression>),
@@ -128,7 +132,8 @@ pub enum IExpression {
     //Non-Constructible by the parser
     Block( Box<IExpression> ),
     Handling( Box<IExpression> ),
-    EffectHandling{ effect: Effect, arguments: Vec<IValue>, computation: Box<IExpression>, environment: Vec<EnvBlock> }
+    EffectHandling{ effect: Effect, arguments: Vec<IValue>, computation: Box<IExpression>, environment: Vec<EnvBlock> },
+    Continuation{ expression: Box<IExpression>, previous_environment: Vec<EnvBlock> },
 }
 
 #[derive(Clone)]
@@ -156,7 +161,6 @@ impl From<Value> for IValue {
             Value::I32Literal(val) => IValue::I32Literal(val),
             Value::RuneLiteral(val) => IValue::RuneLiteral(val),
             Value::StringLiteral(val) => IValue::StringLiteral(val),
-            Value::Closure { arguments, computation } => IValue::Closure { arguments, computation: computation.into() },
         }
     }
 }
@@ -182,6 +186,7 @@ impl From<Expression> for IExpression {
             Expression::UnaryOp(op, expr) => IExpression::UnaryOp(op, expr.into()),
             Expression::BinaryOp(lexpr, op, rexpr) => IExpression::BinaryOp(lexpr.into(), op, rexpr.into()),
             Expression::Block(expression) => IExpression::Block(expression.into()),
+            Expression::Closure { arguments, computation } => IExpression::ClosureCreate { arguments, computation: computation.into() },
         }
     }
 }
@@ -271,9 +276,13 @@ impl std::fmt::Display for IExpression {
             IExpression::Block(expr) =>
                 f.write_fmt(format_args!("Block {{\n{}\n}}", Pad(expr, false))),
             IExpression::Handling(expr) =>
-                f.write_fmt(format_args!("Handling {{\n{}\n}}", Pad(expr, false))),
+                f.write_fmt(format_args!("Handling {}", expr)),
             IExpression::EffectHandling { effect, arguments, computation, .. } =>
                 f.write_fmt(format_args!("EffectHandling {:?}{:?} {{\n{}\n}}", effect, arguments, Pad(computation, false))),
+            IExpression::ClosureCreate { arguments, computation } =>
+                f.write_fmt(format_args!("ClosureCreate |{:?}| {}", arguments, computation)),
+            IExpression::Continuation { expression, .. } =>
+                f.write_fmt(format_args!("Continuation {}", expression)),
         }
     }
 }
@@ -288,7 +297,6 @@ impl std::fmt::Display for IValue {
             IValue::StringLiteral(value) => f.write_fmt(format_args!("\"{}\"", value)),
             IValue::Function(value) => f.write_fmt(format_args!("{}", value)),
             IValue::NativeFunction(value) => f.write_fmt(format_args!("{}", value)),
-            IValue::Continuation { .. } => f.write_str("continuation"),
             IValue::Closure { .. } => f.write_str("closure"),
         }
     }

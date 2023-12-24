@@ -21,25 +21,7 @@ pub fn parse_value<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Value, E>
             let Token::StringLiteral(value) = tokens.iter_elements().next().unwrap().get_token().clone() else { panic!() };
             Value::StringLiteral(value)
         }),
-        parse_closure,
     ))(input)
-}
-
-pub fn parse_closure<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Value, E>
-    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
-{
-    let mut arguments = None;
-    let mut computation = None;
-
-    let (stream, _) = context("closure", apply((
-        alt((
-            keep(&mut arguments, pipe_brackets(separated_list0(list_separator, identifier))),
-            skip(single_tag(Symbol::LogicalOr)),
-        )),
-        cut(keep(&mut computation, parse_expression)),
-    )))(input)?;
-
-    Ok((stream, Value::Closure { arguments: arguments.unwrap_or_else(|| Vec::new()), computation: Box::new(computation.unwrap()) }))
 }
 
 pub fn parse_value_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expression, E>

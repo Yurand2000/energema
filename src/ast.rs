@@ -22,7 +22,6 @@ pub enum Value {
     I32Literal(i32),
     RuneLiteral(char),
     StringLiteral(String),
-    Closure{ arguments: Vec<Identifier>, computation: Box<Expression> },
 }
 
 #[derive(Debug)]
@@ -38,6 +37,7 @@ pub enum Expression {
     FunCall{ function: Box<Expression>, arguments: Vec<Expression> },
     EffCall{ effect: Effect, arguments: Vec<Expression> },
     Handling{ handler: Identifier, computation: Box<Expression> },
+    Closure{ arguments: Vec<Identifier>, computation: Box<Expression> },
     Block( Box<Expression> ),
 
     UnaryOp(UnaryOp, Box<Expression>),

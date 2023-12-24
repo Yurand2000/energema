@@ -12,9 +12,16 @@ impl Interpreter {
 
             if reduced {
                 let arguments = Self::fn_args_to_values(arguments);
-                let computation = Box::new(IExpression::VarValue("$effret".into()));
+                let effect_def = env.search_effect(&effect)
+                    .ok_or_else(|| format!("Definition for effect \"{:?}\" not found.", effect))?;
 
-                Ok(IExpression::EffectHandling { effect, arguments, computation, environment: Vec::new() })
+                let computation = if effect_def.out_type.is_some() {
+                    IExpression::VarValue("$effret".into())
+                } else {
+                    IExpression::Value(Box::new(IValue::ULiteral))
+                };
+
+                Ok(IExpression::EffectHandling { effect, arguments, computation: Box::new(computation), environment: Vec::new() })
             } else {
                 Ok(IExpression::EffectCall { effect, arguments })
             }

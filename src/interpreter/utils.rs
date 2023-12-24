@@ -23,7 +23,7 @@ impl Interpreter {
 
     pub fn restart(&mut self) -> Result<(), String> {
         let Some(main) = self.environment.get_main_function() else { return Err(format!("Main function not found!")); };
-        self.expression = IExpression::Block(main.expression);
+        self.expression = *main.expression;
         self.environment.reset();
         Ok(())
     }
@@ -46,10 +46,9 @@ impl Interpreter {
             IValue::I32Literal(value) => format!("{}: i32", value),
             IValue::RuneLiteral(value) => format!("{}: rune", value),
             IValue::StringLiteral(value) => format!("{}: string", value),
-            IValue::Continuation { .. } => todo!(),
             IValue::Function(_) => todo!(),
             IValue::NativeFunction(_) => todo!(),
-            IValue::Closure { .. } => todo!(),
+            IValue::Closure{ .. } => todo!(),
         }
     }
 }

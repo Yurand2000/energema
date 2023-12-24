@@ -15,6 +15,7 @@ mod fn_call_expression;
 mod effect_call_expression;
 mod handler_expressions;
 mod operator_expressions;
+mod closure_creation;
 
 use interpreter_data::*;
 
@@ -77,6 +78,10 @@ impl Interpreter {
                 Self::interpret_block(expr, env),
             IExpression::Handling(expr) =>
                 Self::interpret_handling(expr, env),
+            IExpression::ClosureCreate { arguments, computation } =>
+                Self::interpret_closure_create((arguments, computation), env),
+            IExpression::Continuation { expression, previous_environment } =>
+                Self::interpret_continuation((expression, previous_environment), env),
         }
     }
 }

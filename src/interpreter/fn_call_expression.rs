@@ -29,8 +29,8 @@ impl Interpreter {
                         Self::execute_function((function, arguments), env),
                     IValue::NativeFunction(native_fun) =>
                         Self::execute_native_function((native_fun, arguments), env),
-                    IValue::Continuation { expression, previous_environment } =>
-                        Self::execute_continuation((expression, previous_environment, arguments), env),
+                    IValue::Closure { arguments: call_arguments, computation, environment } =>
+                        Self::execute_closure((call_arguments, computation, environment, arguments), env),
                     _ => {
                         Err(format!("Function expression must either be an identifier or a continuation"))
                     }
@@ -56,7 +56,7 @@ impl Interpreter {
             env.new_identifier(id, value);
         }
             
-        Ok(IExpression::Block(function.expression.clone()))
+        Ok(*function.expression.clone())
     }
 
     fn execute_native_function((function, arguments): (NativeFun, Vec<IExpression>), _env: &mut Environment) -> Result<IExpression, String> {
@@ -66,20 +66,23 @@ impl Interpreter {
             .map(|value| IExpression::Value(Box::new(value)))
     }
 
-    fn execute_continuation((expr, previous_environment, arguments): (Box<IExpression>, Vec<EnvBlock>, Vec<IExpression>), env: &mut Environment) -> Result<IExpression, String> {
-        if arguments.len() > 1 {
-            return Err(format!("Argument number mismatch for continuation: Expected 0 or 1 arguments, but found {}.", arguments.len()));
+    fn execute_closure((call_arguments, expr, environment, arguments): (Vec<Identifier>, Box<IExpression>, ActivationRecord, Vec<IExpression>), env: &mut Environment) -> Result<IExpression, String> {
+        if call_arguments.len() != arguments.len() {
+            return Err(format!("Argument number mismatch for closure: expected {} arguments, but found {}.", call_arguments.len(), arguments.len()));
         }
+
         let arguments = Self::fn_args_to_values(arguments);
-        
-        env.restore_environment(previous_environment);
-
-        if !arguments.is_empty() {
-            env.new_identifier_str("$effret", arguments.into_iter().next().unwrap());
-        } else {
-            env.new_identifier_str("$effret", IValue::ULiteral);
+            
+        env.attach_block(environment);
+        for (id, value) in call_arguments.iter().zip(arguments.into_iter()) {
+            env.new_identifier(id, value);
         }
 
+        Ok(IExpression::Block(expr))
+    }
+
+    pub(super) fn interpret_continuation((expr, previous_environment): (Box<IExpression>, Vec<EnvBlock>), env: &mut Environment) -> Result<IExpression, String> {
+        env.restore_environment(previous_environment);
         Ok(*expr)
     }
 

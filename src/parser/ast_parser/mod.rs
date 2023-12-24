@@ -154,7 +154,25 @@ fn parse_expression_top_precedence<'a, E>(input: Stream<'a>) -> IResult<Stream<'
         parse_while_expression,
         parse_effect_call_expression,
         parse_handler_install_expression,
+        parse_closure_create,
         parse_variable,
         parse_value_expression,
     )))(input)
+}
+
+pub fn parse_closure_create<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expression, E>
+    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
+{
+    let mut arguments = None;
+    let mut computation = None;
+
+    let (stream, _) = context("closure create", apply((
+        alt((
+            keep(&mut arguments, pipe_brackets(separated_list0(list_separator, identifier))),
+            skip(single_tag(Symbol::LogicalOr)),
+        )),
+        cut(keep(&mut computation, parse_expression)),
+    )))(input)?;
+
+    Ok((stream, Expression::Closure { arguments: arguments.unwrap_or_else(|| Vec::new()), computation: Box::new(computation.unwrap()) }))
 }

@@ -8,7 +8,7 @@ pub fn parse_handler_declaration<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>
     let mut effect_handlers0 = None;
     let mut effect_handlers1 = None;
 
-    let (stream, _) = apply((
+    let (stream, _) = context("handler declaration", apply((
         skip(single_tag(Keyword::Handler)),
         cut(apply((
             keep(&mut name, identifier),
@@ -16,25 +16,25 @@ pub fn parse_handler_declaration<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>
             skip(single_tag(Symbol::CloseParentesis)),
             braces(
                 alt((
-                    apply((
-                        keep(&mut return_handler, context("return_handler", parse_return_handler)),
+                    context("with return handler", apply((
+                        keep(&mut return_handler, parse_return_handler),
                         alt((
                             apply((
                                 skip(list_separator),
-                                keep(&mut effect_handlers0, separated_list1(list_separator, context("effect_handler", parse_effect_handler))),
+                                keep(&mut effect_handlers0, separated_list1(list_separator, parse_effect_handler)),
                                 skip(opt(list_separator)),
                             )),
                             skip(opt(list_separator)),
                         ))
-                    )),
-                    apply((
-                        keep(&mut effect_handlers1, separated_list0(list_separator, context("effect_handler", parse_effect_handler))),
+                    ))),
+                    context("without return handler", apply((
+                        keep(&mut effect_handlers1, separated_list0(list_separator, parse_effect_handler)),
                         skip(opt(list_separator)),
-                    )),
+                    ))),
                 )),
             ),
         ))),
-    ))(input)?;
+    )))(input)?;
 
     let effect_handlers = effect_handlers0.unwrap_or( effect_handlers1.unwrap_or(Vec::new()) );
     Ok((stream, HandlerDeclaration{ name: name.unwrap(), return_handler, effect_handlers }))

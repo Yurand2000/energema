@@ -11,7 +11,6 @@ impl Declarations {
                         IValue::I32Literal(value) => print!("{}", value),
                         IValue::RuneLiteral(value) => print!("{}", value),
                         IValue::StringLiteral(value) => print!("{}", value),
-                        IValue::Continuation { .. } => print!("{}", "computation"),
                         IValue::Function { .. } => print!("{}", "function"),
                         IValue::NativeFunction { .. } => print!("{}", "native function"),
                         IValue::Closure { .. } => print!("{}", "closure"),
