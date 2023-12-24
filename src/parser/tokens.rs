@@ -250,6 +250,10 @@ impl<'a, 'b, T1, T2> Compare<TokenStream<'b, T2>> for TokenStream<'a, T1>
     where T1: PartialEq<T2>
 {
     fn compare(&self, tokens: TokenStream<'b, T2>) -> nom::CompareResult {
+        if self.stream.len() < tokens.stream.len() {
+            return nom::CompareResult::Error;
+        }
+
         let equal = self.stream.iter().zip(tokens.stream.iter())
             .all(|(stream_token, token)| stream_token == token);
 
