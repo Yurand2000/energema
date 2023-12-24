@@ -25,7 +25,7 @@ fn test_keyword_extraction() {
 
 #[test]
 fn test_symbol_extraction() {
-    let symbols = "( ) [ ] { } , : ; ~ -> ^ ! + - * / % && || ^^ | = == != > >= < <=";
+    let symbols = "( ) [ ] { } , : ; ~ -> => ^ ! + - * / % && || ^^ | = == != > >= < <=";
     let mut symbols = StatefulParser::new(symbols);
 
     assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::OpenParenthesis));
@@ -39,6 +39,7 @@ fn test_symbol_extraction() {
     assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::Semicolon));
     assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::Tilde));
     assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::Arrow));
+    assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::DoubleArrow));
     assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::NegatedSet));
     assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::Exclamation));
     assert_eq!(symbols.parse(parse_symbol), Ok(Symbol::Plus));

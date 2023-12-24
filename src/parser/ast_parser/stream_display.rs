@@ -69,6 +69,7 @@ impl std::fmt::Display for Symbol {
             Symbol::Semicolon => write!(f, "; "),
             Symbol::Tilde => write!(f, "~"),
             Symbol::Arrow => write!(f, " ->"),
+            Symbol::DoubleArrow => write!(f, " =>"),
             Symbol::NegatedSet => write!(f, "^"),
             Symbol::Exclamation => write!(f, "!"),
             Symbol::Plus => write!(f, "+"),

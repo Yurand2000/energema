@@ -48,7 +48,7 @@ pub fn parse_return_handler<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, (Ty
     let mut name = None;
     let mut body = None;
 
-    let (stream, _) = apply((
+    let (stream, _) = context("return handler", apply((
         skip(single_tag(Keyword::Return)),
         cut(apply((
             keep(&mut name, identifier),
@@ -56,9 +56,9 @@ pub fn parse_return_handler<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, (Ty
             keep(&mut in_type, parse_type),
             skip(single_tag(Symbol::Arrow)),
             keep(&mut out_type, parse_type),
-            keep(&mut body, context("effect_handler_block", parse_block)),
+            keep(&mut body, parse_block_expression),
         ))),
-    ))(input)?;
+    )))(input)?;
 
     Ok( (stream, (in_type.unwrap(), out_type.unwrap(), name.unwrap(), Box::new(body.unwrap()))) )
 }
@@ -70,11 +70,11 @@ pub fn parse_effect_handler<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, (Ef
     let mut arguments = None;
     let mut body = None;
 
-    let (stream, _) = apply((
+    let (stream, _) = context("effect handler", apply((
         keep(&mut effect, parse_effect_name),
         keep(&mut arguments, parenthesis(separated_list0(list_separator, identifier))),
-        keep(&mut body, context("effect_handler_block", parse_block)),
-    ))(input)?;
+        keep(&mut body, parse_block_expression),
+    )))(input)?;
 
     Ok( (stream, (effect.unwrap(), arguments.unwrap(), Box::new(body.unwrap()))) )
 }

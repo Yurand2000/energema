@@ -47,6 +47,28 @@ pub fn braces<'a, T, E>(parser: impl FnMut(Stream<'a>) -> IResult<Stream<'a>, T,
     )
 }
 
+pub fn angle_brackets<'a, T, E>(parser: impl FnMut(Stream<'a>) -> IResult<Stream<'a>, T, E>) ->
+    impl FnMut(Stream<'a>) -> IResult<Stream<'a>, T, E>
+        where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
+{
+    delimited(
+        single_tag(Symbol::SmallerThan),
+        parser,
+        single_tag(Symbol::GreaterThan)
+    )
+}
+
+pub fn pipe_brackets<'a, T, E>(parser: impl FnMut(Stream<'a>) -> IResult<Stream<'a>, T, E>) ->
+    impl FnMut(Stream<'a>) -> IResult<Stream<'a>, T, E>
+        where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
+{
+    delimited(
+        single_tag(Symbol::Pipe),
+        parser,
+        single_tag(Symbol::Pipe)
+    )
+}
+
 #[test]
 fn test_single_tag() {
     let data = tokenize("effect ->").unwrap();

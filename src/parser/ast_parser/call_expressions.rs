@@ -6,10 +6,10 @@ pub fn parse_function_call_expression<'a, E>(input: Stream<'a>) -> IResult<Strea
     let mut expr = None;
     let mut arguments = None;
 
-    let (stream, _) = apply((
-        keep(&mut expr, context("no_sequencing", parse_expression_no_sequencing)),
-        keep(&mut arguments, opt(parenthesis(separated_list0(list_separator, parse_binary_op_expression)))),
-    ))(input)?;
+    let (stream, _) = context("function call", apply((
+        keep(&mut expr, parse_expression_top_precedence),
+        keep(&mut arguments, opt(parenthesis(separated_list0(list_separator, parse_single_line_expression)))),
+    )))(input)?;
 
     let (function, arguments) = (expr.unwrap(), arguments.unwrap());
     if arguments.is_some() {
@@ -25,13 +25,13 @@ pub fn parse_effect_call_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<
     let mut effect = None;
     let mut arguments = None;
 
-    let (stream, _) = apply((
+    let (stream, _) = context("effect call", apply((
         skip(single_tag(Keyword::Perform)),
         cut(apply((
             keep(&mut effect, parse_effect_name),
-            keep(&mut arguments, parenthesis(separated_list0(list_separator, parse_binary_op_expression))),
+            keep(&mut arguments, parenthesis(separated_list0(list_separator, parse_single_line_expression))),
         ))),
-    ))(input)?;
+    )))(input)?;
 
     Ok((stream, Expression::EffCall { effect: effect.unwrap(), arguments: arguments.unwrap() }))
 }
@@ -42,15 +42,15 @@ pub fn parse_handler_install_expression<'a, E>(input: Stream<'a>) -> IResult<Str
     let mut handler = None;
     let mut expr = None;
 
-    let (stream, _) = apply((
+    let (stream, _) = context("handler install", apply((
         skip(single_tag(Keyword::With)),
         cut(apply((
             keep(&mut handler, identifier),
             skip(single_tag(Symbol::OpenParenthesis)),
             skip(single_tag(Symbol::CloseParentesis)),
-            keep(&mut expr, parse_block),
+            keep(&mut expr, parse_block_expression),
         ))),
-    ))(input)?;
+    )))(input)?;
 
     Ok((stream, Expression::Handling { handler: handler.unwrap(), computation: Box::new(expr.unwrap()) }))
 }

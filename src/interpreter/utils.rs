@@ -44,11 +44,12 @@ impl Interpreter {
             IValue::ULiteral => format!("(): unit"),
             IValue::BLiteral(value) => format!("{}: bool", value),
             IValue::I32Literal(value) => format!("{}: i32", value),
-            IValue::RuneLiteral(_) => todo!(),
-            IValue::StringLiteral(_) => todo!(),
-            IValue::Continuation { .. } => format!("!: continuation"),
+            IValue::RuneLiteral(value) => format!("{}: rune", value),
+            IValue::StringLiteral(value) => format!("{}: string", value),
+            IValue::Continuation { .. } => todo!(),
             IValue::Function(_) => todo!(),
             IValue::NativeFunction(_) => todo!(),
+            IValue::Closure { .. } => todo!(),
         }
     }
 }

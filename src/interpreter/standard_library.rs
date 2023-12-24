@@ -14,6 +14,7 @@ impl Declarations {
                         IValue::Continuation { .. } => print!("{}", "computation"),
                         IValue::Function { .. } => print!("{}", "function"),
                         IValue::NativeFunction { .. } => print!("{}", "native function"),
+                        IValue::Closure { .. } => print!("{}", "closure"),
                     };
                 }
                 println!("");

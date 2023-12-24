@@ -33,7 +33,7 @@ pub fn tokenize(code: &str) -> Result<Vec<LocatedToken>, String> {
         keep(&mut eof_position, position),
         skip(eof),
     ))(input);
-        
+
     match result {
         Ok(_) => {
             let mut tokens = tokens.unwrap();
@@ -54,7 +54,7 @@ fn next_token(input: Span) -> IResult<Span, LocatedToken> {
     ))(input)?;
 
     let token = LocatedToken::from_span(token.unwrap(), pos.unwrap());
-    
+
     Ok((out, token))
 }
 
@@ -105,7 +105,8 @@ fn parse_keyword(input: Span) -> IResult<Span, Keyword> {
 fn parse_symbol(input: Span) -> IResult<Span, Symbol> {
     alt((
         alt((
-            value(Symbol::Arrow, tag("->")),            
+            value(Symbol::Arrow, tag("->")),
+            value(Symbol::DoubleArrow, tag("=>")),
             value(Symbol::LogicalAnd, tag("&&")),
             value(Symbol::LogicalOr, tag("||")),
             value(Symbol::LogicalXor, tag("^^")),

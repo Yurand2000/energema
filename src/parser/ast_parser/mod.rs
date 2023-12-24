@@ -73,25 +73,49 @@ fn parse_declaration<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Declaratio
 fn parse_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expression, E>
     where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
 {
-    context("sequencing", parse_sequencing_expression)(input)
+    context("expression", alt((
+        parse_block_expression,
+        parse_single_line_expression,
+    )))(input)
+}
+
+fn parse_single_line_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expression, E>
+    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
+{
+    context("single line", parse_binary_op_expression)(input)
+}
+
+pub fn parse_block_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expression, E>
+    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
+{
+    let mut body = None;
+
+    let (stream, _) = context("block", apply((
+        keep(&mut body, braces(parse_sequencing_expression)),
+    )))(input)?;
+
+    Ok((stream, Expression::Block( Box::new(body.unwrap()) )))
 }
 
 fn parse_sequencing_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expression, E>
     where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
 {
     let mut lexpr = None;
+    let mut is_sequencing = None;
     let mut rexpr = None;
 
-    let (stream, _) = apply((
-        keep(&mut lexpr, context("let", parse_let_expression)),
-        keep(&mut rexpr, opt(second(single_tag(Symbol::Semicolon), cut(parse_expression)))),
-    ))(input)?;
+    let (stream, _) = context("sequencing", apply((
+        keep(&mut lexpr, parse_let_expression),
+        keep(&mut is_sequencing, opt(apply((
+            single_tag(Symbol::Semicolon),
+            cut(keep(&mut rexpr, parse_sequencing_expression)))))
+        ),
+    )))(input)?;
 
-    let (lexpr, rexpr) = (lexpr.unwrap(), rexpr.unwrap());
-    if rexpr.is_some() {
-        Ok((stream, Expression::Sequencing(Box::new(lexpr), Box::new(rexpr.unwrap()))))
+    if is_sequencing.unwrap().is_some() {
+        Ok((stream, Expression::Sequencing(Box::new(lexpr.unwrap()), Box::new(rexpr.unwrap()))))
     } else {
-        Ok((stream, lexpr))
+        Ok((stream, lexpr.unwrap()))
     }
 }
 
@@ -102,17 +126,17 @@ fn parse_let_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Express
     let mut expr0 = None;
     let mut expr1 = None;
 
-    let (stream, _) = alt((
+    let (stream, _) = context("let", alt((
         apply((
             skip(single_tag(Keyword::Let)),
             cut(apply((
                 keep(&mut id, identifier),
                 skip(single_tag(Symbol::Equal)),
-                keep(&mut expr0, context("binary_op", parse_binary_op_expression)),
+                keep(&mut expr0, parse_binary_op_expression),
             )))
         )),
-        keep(&mut expr1, context("binary_op", parse_binary_op_expression)),
-    ))(input)?;
+        keep(&mut expr1, parse_binary_op_expression),
+    )))(input)?;
 
     if expr1.is_some() {
         Ok((stream, expr1.unwrap()))
@@ -121,16 +145,16 @@ fn parse_let_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Express
     }
 }
 
-fn parse_expression_no_sequencing<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expression, E>
+fn parse_expression_top_precedence<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expression, E>
     where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
 {
-    alt((
-        parenthesis(parse_expression),
+    context("top precedence", alt((
+        parenthesis(parse_single_line_expression),
         parse_if_expression,
         parse_while_expression,
         parse_effect_call_expression,
         parse_handler_install_expression,
         parse_variable,
         parse_value_expression,
-    ))(input)
+    )))(input)
 }

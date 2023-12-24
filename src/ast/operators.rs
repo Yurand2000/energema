@@ -3,7 +3,7 @@
 #[derive(Clone)]
 #[derive(PartialEq, Eq)]
 pub enum UnaryOp {
-    LNot,
+    LNot, Negate
 }
 
 #[derive(Debug)]

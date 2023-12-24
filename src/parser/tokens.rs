@@ -50,6 +50,7 @@ pub enum Symbol {
     Semicolon,          // ;
     Tilde,              // ~
     Arrow,              // ->
+    DoubleArrow,        // =>
     NegatedSet,         // ^
     Exclamation,        // !
     Plus,               // +

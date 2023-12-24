@@ -13,6 +13,7 @@ impl Interpreter {
             )),
             IValue::Function(_) => todo!(),
             IValue::NativeFunction(_) => todo!(),
+            IValue::Closure { .. } => todo!(),
         })
     }
 

@@ -1,4 +1,4 @@
-use std::fmt::{Debug, Pointer};
+use std::fmt::Debug;
 
 use super::*;
 
@@ -100,6 +100,7 @@ pub enum IValue {
     I32Literal(i32),
     RuneLiteral(char),
     StringLiteral(String),
+    Closure{ arguments: Vec<Identifier>, computation: Box<IExpression> },
 
     //Non-Constructible by the parser
     Function(IFunDeclaration),
@@ -155,6 +156,7 @@ impl From<Value> for IValue {
             Value::I32Literal(val) => IValue::I32Literal(val),
             Value::RuneLiteral(val) => IValue::RuneLiteral(val),
             Value::StringLiteral(val) => IValue::StringLiteral(val),
+            Value::Closure { arguments, computation } => IValue::Closure { arguments, computation: computation.into() },
         }
     }
 }
@@ -179,6 +181,7 @@ impl From<Expression> for IExpression {
             Expression::Handling { handler, computation } => IExpression::HandlingInstall { handler, computation: computation.into() },
             Expression::UnaryOp(op, expr) => IExpression::UnaryOp(op, expr.into()),
             Expression::BinaryOp(lexpr, op, rexpr) => IExpression::BinaryOp(lexpr.into(), op, rexpr.into()),
+            Expression::Block(expression) => IExpression::Block(expression.into()),
         }
     }
 }
@@ -286,6 +289,7 @@ impl std::fmt::Display for IValue {
             IValue::Function(value) => f.write_fmt(format_args!("{}", value)),
             IValue::NativeFunction(value) => f.write_fmt(format_args!("{}", value)),
             IValue::Continuation { .. } => f.write_str("continuation"),
+            IValue::Closure { .. } => f.write_str("closure"),
         }
     }
 }
