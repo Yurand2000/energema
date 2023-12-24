@@ -44,6 +44,11 @@ fn execute_code_interactive(file: &str) -> Result<(), String> {
             if read_buffer.contains("next") {
                 interpreter.next()?;
                 println!("{}", interpreter.print_state());
+            } else if read_buffer.contains("n10") {
+                for _ in 0..10 {
+                    interpreter.next()?;
+                }
+                println!("{}", interpreter.print_state());
             } else if read_buffer.contains("restart") {
                 interpreter.restart()?;
             } else if read_buffer.contains("exit") {

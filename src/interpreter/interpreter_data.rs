@@ -15,6 +15,10 @@ impl ActivationRecord {
     pub fn search_identifier(&self, id: &Identifier) -> Option<IValue> {
         self.0.get(&id).cloned()
     }
+
+    pub fn pop_identifier(&mut self, id: &Identifier) -> Option<IValue> {
+        self.0.remove(&id)
+    }
 }
 
 #[derive(Debug)]
@@ -37,6 +41,12 @@ impl EnvBlock {
     pub fn search_identifier(&self, id: &Identifier) -> Option<IValue> {
         self.stack.iter().rev().fold(None, |acc, act_record| {
             acc.or_else(|| act_record.search_identifier(id))
+        })
+    }
+
+    pub fn pop_identifier(&mut self, id: &Identifier) -> Option<IValue> {
+        self.stack.iter_mut().rev().fold(None, |acc, act_record| {
+            acc.or_else(|| act_record.pop_identifier(id))
         })
     }
 
@@ -265,9 +275,9 @@ impl std::fmt::Display for IExpression {
             IExpression::While { guard, block } =>
                 f.write_fmt(format_args!("While {}\n{}", guard, Pad(block, false))),
             IExpression::FunctionCall { function, arguments } =>
-                f.write_fmt(format_args!("Call {}\n{:#?}", function, Pad(arguments, false))),
+                f.write_fmt(format_args!("Call {}\n{}", function, Pad(Arguments(arguments), false))),
             IExpression::EffectCall { effect, arguments } =>
-                f.write_fmt(format_args!("EffCall {:?}\n{:#?}", effect, Pad(arguments, false))),
+                f.write_fmt(format_args!("EffCall {:?}\n{}", effect, Pad(Arguments(arguments), false))),
             IExpression::HandlingInstall { handler, computation } =>
                 f.write_fmt(format_args!("With {}() handle [leaf in tree]\n{}", handler.0, Pad(computation, false))),
             IExpression::UnaryOp(op, expr) =>
@@ -287,6 +297,24 @@ impl std::fmt::Display for IExpression {
             IExpression::Continuation { expression, .. } =>
                 f.write_fmt(format_args!("Continuation [leaf in tree]\n{}", Pad(expression, false))),
         }
+    }
+}
+
+struct Arguments<'a>(&'a Vec<IExpression>);
+
+impl std::fmt::Display for Arguments<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if self.0.is_empty() {
+            write!(f, "[]")?;
+        } else {
+            writeln!(f, "[")?;
+            for argument in self.0 {
+                writeln!(f, "  {},", argument)?;
+            }
+            write!(f, "]")?;
+        }
+    
+        Ok(())
     }
 }
 

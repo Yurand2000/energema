@@ -7,11 +7,11 @@ impl Interpreter {
                 match *value {
                     IValue::BLiteral(true) => {
                         env.push_block();
-                        *then_b
+                        IExpression::Block(then_b)
                     },
                     IValue::BLiteral(false) => {
                         env.push_block();
-                        *else_b
+                        IExpression::Block(else_b)
                     },
                     value => Err(format!("If expression guard, of type {:?}, is not of boolean type",
                         Self::get_type_of_value(&value, env)))?

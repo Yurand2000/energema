@@ -28,6 +28,13 @@ impl Environment {
             .or_else(|| self.search_function(id))
     }
 
+    pub fn pop_identifier(&mut self, id: &Identifier) -> Option<IValue> {
+        self.call_stack.iter_mut().rev()
+            .fold(None, |acc, envblock| {
+                acc.or_else(|| envblock.pop_identifier(id))
+            })
+    }
+
     pub fn get_main_function(&self) -> Option<IFunDeclaration> {
         self.declarations.functions.get(&"main".into()).cloned()
             .filter(|main_fn| main_fn.arguments.is_empty())
