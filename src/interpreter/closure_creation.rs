@@ -3,8 +3,9 @@ use super::*;
 impl Interpreter {
     pub(super) fn interpret_closure_create((arguments, expr): (Vec<Identifier>, Box<IExpression>), env: &mut Environment) -> Result<IExpression, String> {
         let captured = Self::get_variables_in_expression(&expr);
+        let captured = captured.into_iter().filter(|id| !arguments.contains(id));
         let mut closure_environment = ActivationRecord::default();
-        for capture in captured.into_iter() {
+        for capture in captured {
             let Some(value) = env.search_identifier(capture) else {
                 return Err(format!("Closure tried to capture variable \"{}\", but it was not found in the current environment.", capture));
             };
@@ -67,6 +68,7 @@ impl Interpreter {
                 left
             },
             IExpression::Block(expr) => Self::get_variables_in_expression(expr),
+            IExpression::BlockCreate(expr) => Self::get_variables_in_expression(expr),
             IExpression::Handling(expr) => Self::get_variables_in_expression(expr),
             IExpression::EffectHandling { computation, environment, .. } => {
                 let ids = Self::get_variables_in_expression(computation);

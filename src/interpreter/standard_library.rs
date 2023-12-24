@@ -21,4 +21,12 @@ impl Declarations {
             }))
         ]
     }
+
+    pub fn default_handler() -> IHandlerDeclaration {
+        IHandlerDeclaration{
+            name: "$default_handler".into(),
+            return_handler: None,
+            effect_handlers: Vec::new()
+        }
+    }
 }

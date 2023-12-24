@@ -23,7 +23,7 @@ impl Interpreter {
 
     pub fn restart(&mut self) -> Result<(), String> {
         let Some(main) = self.environment.get_main_function() else { return Err(format!("Main function not found!")); };
-        self.expression = *main.expression;
+        self.expression = IExpression::Handling(Box::new(IExpression::Block(main.expression)));
         self.environment.reset();
         Ok(())
     }
@@ -36,7 +36,17 @@ impl Interpreter {
         let mut old_expression = IExpression::Value(Box::new(IValue::ULiteral));
         std::mem::swap(&mut self.expression, &mut old_expression);
         let IExpression::Value(val) = old_expression else { panic!("unexpected panic. Unwrapping a non-value expression!") };
-        Ok(format!("Program returned {}", self.value_to_string(*val)))
+
+        let result = format!("Program returned {}", self.value_to_string(*val));
+        if self.environment.call_stack.is_empty() {
+            Ok(result)
+        } else {
+            Err(format!("{}, but call stack was not emptied!\nHandler Stack size: {}\nCall Stack size: {}",
+                result,
+                self.environment.call_stack.len() - 1,
+                self.environment.call_stack.last().unwrap().get_stack_size()
+            ))
+        }
     }    
 
     fn value_to_string(&self, value: IValue) -> String {

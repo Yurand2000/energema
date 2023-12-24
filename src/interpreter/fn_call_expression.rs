@@ -56,7 +56,7 @@ impl Interpreter {
             env.new_identifier(id, value);
         }
             
-        Ok(*function.expression.clone())
+        Ok(IExpression::Block(function.expression))
     }
 
     fn execute_native_function((function, arguments): (NativeFun, Vec<IExpression>), _env: &mut Environment) -> Result<IExpression, String> {

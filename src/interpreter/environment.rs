@@ -9,7 +9,7 @@ impl Environment {
 
     pub fn reset(&mut self) {
         self.call_stack.clear();
-        self.call_stack.push(EnvBlock::new("default_handler".into()))
+        self.call_stack.push(EnvBlock::new("$default_handler".into()))
     }
 
     pub fn new_identifier(&mut self, id: &Identifier, value: IValue) {

@@ -3,7 +3,7 @@ use super::*;
 impl Interpreter {
     pub(super) fn interpret_handler_install((handler, computation): (Identifier, Box<IExpression>), env: &mut Environment) -> Result<IExpression, String> {
         env.push_handler(handler);
-        Ok(IExpression::Handling(computation))
+        Ok(IExpression::Handling(Box::new(IExpression::Block(computation))))
     }
 
     pub(super) fn interpret_handling(expr: Box<IExpression>, env: &mut Environment) -> Result<IExpression, String> {
@@ -16,7 +16,7 @@ impl Interpreter {
                 if let Some((_, _, id, expr)) = handler.return_handler {
                     env.push_block();
                     env.new_identifier(&id, *value);
-                    Ok(*expr)
+                    Ok(IExpression::Block(expr))
                 } else {
                     Ok(IExpression::Value(value))
                 }
@@ -53,7 +53,7 @@ impl Interpreter {
 
                     env.new_identifier_str("continuation", closure);
 
-                    Ok(*handler_body)
+                    Ok(IExpression::Block(handler_body))
                 } else {
                     Ok(IExpression::EffectHandling { effect, arguments, environment,
                         computation: Box::new(IExpression::Handling(computation))

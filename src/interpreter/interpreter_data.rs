@@ -125,6 +125,7 @@ pub enum IExpression {
     EffectCall{ effect: Effect, arguments: Vec<IExpression> },                  //substitute with VarValue($effret), transform the expression(from the root) to a continuation value
     HandlingInstall{ handler: Identifier, computation: Box<IExpression> },      //substitute with Handling(Block(expression))
     ClosureCreate{ arguments: Vec<Identifier>, computation: Box<IExpression> }, //substitute with Value(Closure)
+    BlockCreate( Box<IExpression> ),                                            //substitute with Block
 
     UnaryOp(UnaryOp, Box<IExpression>),
     BinaryOp(Box<IExpression>, BinaryOp, Box<IExpression>),
@@ -185,7 +186,7 @@ impl From<Expression> for IExpression {
             Expression::Handling { handler, computation } => IExpression::HandlingInstall { handler, computation: computation.into() },
             Expression::UnaryOp(op, expr) => IExpression::UnaryOp(op, expr.into()),
             Expression::BinaryOp(lexpr, op, rexpr) => IExpression::BinaryOp(lexpr.into(), op, rexpr.into()),
-            Expression::Block(expression) => IExpression::Block(expression.into()),
+            Expression::Block(expression) => IExpression::BlockCreate(expression.into()),
             Expression::Closure { arguments, computation } => IExpression::ClosureCreate { arguments, computation: computation.into() },
         }
     }
@@ -268,21 +269,23 @@ impl std::fmt::Display for IExpression {
             IExpression::EffectCall { effect, arguments } =>
                 f.write_fmt(format_args!("EffCall {:?}\n{:#?}", effect, Pad(arguments, false))),
             IExpression::HandlingInstall { handler, computation } =>
-                f.write_fmt(format_args!("With {}() handle\n{}", handler.0, Pad(computation, false))),
+                f.write_fmt(format_args!("With {}() handle [leaf in tree]\n{}", handler.0, Pad(computation, false))),
             IExpression::UnaryOp(op, expr) =>
                 f.write_fmt(format_args!("{:?}{}", op, expr)),
             IExpression::BinaryOp(lexpr, op, rexpr) =>
                 f.write_fmt(format_args!("{:?}(\n{}, \n{}\n)", op, Pad(lexpr, true), Pad(rexpr, true))),
             IExpression::Block(expr) =>
                 f.write_fmt(format_args!("Block {{\n{}\n}}", Pad(expr, false))),
+            IExpression::BlockCreate(expr) =>
+                f.write_fmt(format_args!("BlockCreate [leaf in tree]{{\n{}\n}}", Pad(expr, false))),
             IExpression::Handling(expr) =>
-                f.write_fmt(format_args!("Handling {}", expr)),
+                f.write_fmt(format_args!("Handling \n{}", Pad(expr, false))),
             IExpression::EffectHandling { effect, arguments, computation, .. } =>
-                f.write_fmt(format_args!("EffectHandling {:?}{:?} {{\n{}\n}}", effect, arguments, Pad(computation, false))),
+                f.write_fmt(format_args!("EffectHandling {:?}{:?} \n{}", effect, arguments, Pad(computation, false))),
             IExpression::ClosureCreate { arguments, computation } =>
-                f.write_fmt(format_args!("ClosureCreate |{:?}| {}", arguments, computation)),
+                f.write_fmt(format_args!("ClosureCreate |{:?}| [leaf in tree]\n{}", arguments, Pad(computation, false))),
             IExpression::Continuation { expression, .. } =>
-                f.write_fmt(format_args!("Continuation {}", expression)),
+                f.write_fmt(format_args!("Continuation [leaf in tree]\n{}", Pad(expression, false))),
         }
     }
 }

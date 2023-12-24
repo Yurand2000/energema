@@ -39,7 +39,8 @@ pub struct Interpreter {
 }
 
 impl Interpreter {
-    pub fn new(declarations: Declarations) -> Result<Self, String> {
+    pub fn new(mut declarations: Declarations) -> Result<Self, String> {
+        declarations.add_standard_library(Declarations::standard_library(), Declarations::default_handler());
         let mut interpreter = Self {
             environment: Environment::new(declarations),
             expression: IExpression::Value(Box::new(IValue::ULiteral))
@@ -76,6 +77,8 @@ impl Interpreter {
                 Self::interpret_binary_op((lexpr, op, rexpr), env),
             IExpression::Block(expr) =>
                 Self::interpret_block(expr, env),
+            IExpression::BlockCreate(expr) =>
+                Self::interpret_block_create(expr, env),
             IExpression::Handling(expr) =>
                 Self::interpret_handling(expr, env),
             IExpression::ClosureCreate { arguments, computation } =>

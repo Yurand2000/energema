@@ -32,6 +32,11 @@ impl Interpreter {
             }
         }
     }
+
+    pub(super) fn interpret_block_create(expr: Box<IExpression>, env: &mut Environment) -> Result<IExpression, String> {
+        env.push_block();
+        Ok(IExpression::Block(expr))
+    }
     
     pub(super) fn interpret_let((id, expr): (Identifier, Box<IExpression>), env: &mut Environment) -> Result<IExpression, String> {
         Ok(match *expr {

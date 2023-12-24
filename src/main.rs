@@ -21,7 +21,7 @@ fn parse_code(file: &str) -> Result<interpreter::Interpreter, String> {
         .map_err(|err| format!("{:#?}", err))
         .and_then(|code| {
             let parsed = parser::parse_code(&code)?;
-            let declarations = interpreter::Declarations::new(parsed, interpreter::Declarations::standard_library());
+            let declarations = interpreter::Declarations::new(parsed);
             Ok(interpreter::Interpreter::new(declarations)?)
         })
 }
@@ -48,6 +48,8 @@ fn execute_code_interactive(file: &str) -> Result<(), String> {
                 interpreter.restart()?;
             } else if read_buffer.contains("exit") {
                 return Ok(());
+            } else if read_buffer.contains("current") {
+                println!("{}", interpreter.print_state());
             } else if read_buffer.contains("continue") {
                 break;
             }
