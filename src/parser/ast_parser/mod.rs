@@ -94,6 +94,18 @@ pub fn parse_block_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, E
         keep(&mut body, braces(parse_sequencing_expression)),
     )))(input)?;
 
+    Ok((stream, body.unwrap()) )
+}
+
+pub fn parse_explicit_block_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expression, E>
+    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
+{
+    let mut body = None;
+
+    let (stream, _) = context("explicit block", apply((
+        keep(&mut body, parse_block_expression),
+    )))(input)?;
+
     Ok((stream, Expression::Block( Box::new(body.unwrap()) )))
 }
 
@@ -150,6 +162,7 @@ fn parse_expression_top_precedence<'a, E>(input: Stream<'a>) -> IResult<Stream<'
 {
     context("top precedence", alt((
         parenthesis(parse_single_line_expression),
+        parse_explicit_block_expression,
         parse_if_expression,
         parse_while_expression,
         parse_effect_call_expression,

@@ -17,9 +17,9 @@ pub fn parse_effect_declaration<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>,
                 skip(single_tag(Symbol::Arrow)),
                 cut(apply((
                     keep(&mut out_type, parse_type),
-                    skip(single_tag(Symbol::Semicolon)),
                 )))
-            )))
+            ))),
+            skip(single_tag(Symbol::Semicolon)),
         ))),
     ))(input)?;
 
