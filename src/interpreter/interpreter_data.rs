@@ -291,7 +291,7 @@ impl std::fmt::Display for IExpression {
             IExpression::Handling(expr) =>
                 f.write_fmt(format_args!("Handling \n{}", Pad(expr, false))),
             IExpression::EffectHandling { effect, arguments, computation, .. } =>
-                f.write_fmt(format_args!("EffectHandling {:?}{:?} \n{}", effect, arguments, Pad(computation, false))),
+                f.write_fmt(format_args!("EffectHandling {:?}{} \n{}", effect, Arguments(arguments), Pad(computation, false))),
             IExpression::ClosureCreate { arguments, computation } =>
                 f.write_fmt(format_args!("ClosureCreate |{:?}| [leaf in tree]\n{}", arguments, Pad(computation, false))),
             IExpression::Continuation { expression, .. } =>
@@ -300,9 +300,11 @@ impl std::fmt::Display for IExpression {
     }
 }
 
-struct Arguments<'a>(&'a Vec<IExpression>);
+struct Arguments<'a, T>(&'a Vec<T>);
 
-impl std::fmt::Display for Arguments<'_> {
+impl<'a, T> std::fmt::Display for Arguments<'a, T>
+    where T: std::fmt::Display
+{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if self.0.is_empty() {
             write!(f, "[]")?;

@@ -12,7 +12,7 @@ impl Interpreter {
         format!(
             "EXPRESSION:\n{}\n\nHandler Stack size: {}\nCall Stack size: {}",
             self.expression,
-            self.environment.call_stack.len() - 1,
+            self.environment.call_stack.len(),
             self.environment.call_stack.last().unwrap().get_stack_size(),
         )
     }
@@ -43,7 +43,7 @@ impl Interpreter {
         } else {
             Err(format!("{}, but call stack was not emptied!\nHandler Stack size: {}\nCall Stack size: {}",
                 result,
-                self.environment.call_stack.len() - 1,
+                self.environment.call_stack.len(),
                 self.environment.call_stack.last().unwrap().get_stack_size()
             ))
         }
