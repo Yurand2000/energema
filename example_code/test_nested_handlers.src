@@ -1,0 +1,27 @@
+//Energema - nested handlers
+
+effect Get0: unit -> i32;
+effect Get1: unit -> i32;
+
+handler handleGet0() -> i32 {
+    Get0(_: unit) {
+        continuation(0)
+    }
+}
+
+handler handleGet1() -> i32 {
+    Get1(_: unit) {
+        continuation(1)
+    }
+}
+
+fn main() {
+    with handleGet1() {
+        with handleGet0() {
+            nativePrint(perform Get0());
+            nativePrint(perform Get1());
+            nativePrint(perform Get0());
+            nativePrint(perform Get1())
+        }
+    }
+}

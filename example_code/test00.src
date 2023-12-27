@@ -1,13 +1,15 @@
 //Energema - Hello World!
 
-effect print: bool -> ();
+effect print: bool -> bool;
 
-handler defaultHandler() {
-    print(value) { nativePrint(value) }
+handler defaultHandler() -> i32 {
+    return(value: bool) { if value { 1 } else { 0 } },
+    print(value: bool) { let res = continuation(!value); nativePrint(value); res }
 }
 
 fn main() {
     with defaultHandler() {
-        perform print(true)
+        let result = perform print(true);
+        perform print(result)
     }
 }

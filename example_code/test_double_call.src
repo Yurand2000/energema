@@ -1,0 +1,17 @@
+//Energema - double call
+
+effect Double: unit;
+
+handler doubleCall() -> unit {
+    Double(_: unit) {
+        continuation();
+        continuation()
+    }
+}
+
+fn main() {
+    with doubleCall() {
+        perform Double();
+        nativePrint("ciao")
+    }
+}

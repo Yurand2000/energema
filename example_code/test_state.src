@@ -1,0 +1,23 @@
+//Energema - State Handler
+
+effect Get: unit -> i32;
+effect Set: i32;
+
+handler stateHandler() -> fn(i32) -> i32 {
+    return(y: i32) { |_| { y } },
+    Get(_: unit) {
+        |state| { (continuation(state))(state) }
+    },
+    Set(value: i32) {
+        |_| { (continuation())(value) }
+    },
+}
+
+fn main() {
+    let fun = with stateHandler() {
+        let x = perform Get();
+        perform Set(2 * x);
+        perform Get() + 10
+    };
+    fun(30)
+}
