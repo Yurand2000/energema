@@ -36,5 +36,18 @@ pub enum ComputationEffects {
 #[derive(PartialEq, Eq, Hash)]
 pub struct Effect {
     pub eff_type: Identifier,
-    pub name: Option<Identifier>,
+}
+
+#[derive(Debug)]
+#[derive(Clone)]
+#[derive(PartialEq, Eq)]
+pub struct TypedIdentifier {
+    pub id: Identifier,
+    pub typ: Type,
+}
+
+impl TypedIdentifier {
+    pub fn new(id: Identifier, typ: Type) -> Self {
+        Self { id, typ }
+    }
 }

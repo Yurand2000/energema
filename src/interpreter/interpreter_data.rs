@@ -92,7 +92,7 @@ impl EnvBlock {
 #[derive(PartialEq, Eq)]
 pub struct IFunDeclaration {
     pub name: Identifier,
-    pub arguments: Vec<Identifier>,
+    pub arguments: Vec<TypedIdentifier>,
     pub expression: Box<IExpression>,
 }
 
@@ -101,8 +101,25 @@ pub struct IFunDeclaration {
 #[derive(PartialEq, Eq)]
 pub struct IHandlerDeclaration {
     pub name: Identifier,
-    pub return_handler: Option<(Type, Type, Identifier, Box<IExpression>)>,
-    pub effect_handlers: Vec<(Effect, Vec<Identifier>, Box<IExpression>)>,
+    pub return_handler: Option<IReturnHandlerDeclaration>,
+    pub effect_handlers: Vec<IEffectHandlerDeclaration>,
+}
+
+#[derive(Debug)]
+#[derive(Clone)]
+#[derive(PartialEq, Eq)]
+pub struct IReturnHandlerDeclaration {
+    pub ret_arg: TypedIdentifier,
+    pub expression: Box<IExpression>,
+}
+
+#[derive(Debug)]
+#[derive(Clone)]
+#[derive(PartialEq, Eq)]
+pub struct IEffectHandlerDeclaration {
+    pub effect: Effect,
+    pub arguments: Vec<TypedIdentifier>,
+    pub expression: Box<IExpression>,
 }
 
 #[derive(Debug)]
@@ -224,9 +241,21 @@ impl From<HandlerDeclaration> for IHandlerDeclaration {
     fn from(value: HandlerDeclaration) -> Self {
         IHandlerDeclaration {
             name: value.name,
-            return_handler: value.return_handler.map(|(a,b,c,expr)| (a,b,c,expr.into())),
-            effect_handlers: value.effect_handlers.into_iter().map(|(a,b,expr)| (a,b,expr.into())).collect()
+            return_handler: value.return_handler.map(|handler| handler.into()),
+            effect_handlers: value.effect_handlers.into_iter().map(|handler| handler.into()).collect()
         }
+    }
+}
+
+impl From<ReturnHandlerDeclaration> for IReturnHandlerDeclaration {
+    fn from(value: ReturnHandlerDeclaration) -> Self {
+        Self { ret_arg: value.ret_arg, expression: value.expression.into() }
+    }
+}
+
+impl From<EffectHandlerDeclaration> for IEffectHandlerDeclaration {
+    fn from(value: EffectHandlerDeclaration) -> Self {
+        Self { effect: value.effect, arguments: value.arguments, expression: value.expression.into() }
     }
 }
 

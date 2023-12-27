@@ -53,7 +53,7 @@ impl Interpreter {
             
         env.push_block();
         for (id, value) in function.arguments.iter().zip(arguments.into_iter()) {
-            env.new_identifier(id, value);
+            env.new_identifier(&id.id, value);
         }
             
         Ok(IExpression::Block(function.expression))

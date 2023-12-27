@@ -12,9 +12,19 @@ pub enum Declaration {
 #[derive(Debug)]
 #[derive(Clone)]
 #[derive(PartialEq, Eq)]
+pub struct  EffectDeclaration {
+    pub name: Identifier,
+    pub in_types: Vec<Type>,
+    pub out_type: Option<Type>,
+}
+
+#[derive(Debug)]
+#[derive(Clone)]
+#[derive(PartialEq, Eq)]
 pub struct FunDeclaration {
     pub name: Identifier,
-    pub arguments: Vec<Identifier>,
+    pub arguments: Vec<TypedIdentifier>,
+    pub out_type: Option<Type>,
     pub expression: Box<Expression>,
 }
 
@@ -23,15 +33,25 @@ pub struct FunDeclaration {
 #[derive(PartialEq, Eq)]
 pub struct HandlerDeclaration {
     pub name: Identifier,
-    pub return_handler: Option<(Type, Type, Identifier, Box<Expression>)>,
-    pub effect_handlers: Vec<(Effect, Vec<Identifier>, Box<Expression>)>,
+    pub arguments: Vec<TypedIdentifier>,
+    pub out_type: Option<Type>,
+    pub return_handler: Option<ReturnHandlerDeclaration>,
+    pub effect_handlers: Vec<EffectHandlerDeclaration>,
 }
 
 #[derive(Debug)]
 #[derive(Clone)]
 #[derive(PartialEq, Eq)]
-pub struct  EffectDeclaration {
-    pub name: Identifier,
-    pub in_types: Vec<Type>,
-    pub out_type: Option<Type>,
+pub struct ReturnHandlerDeclaration {
+    pub ret_arg: TypedIdentifier,
+    pub expression: Box<Expression>,
+}
+
+#[derive(Debug)]
+#[derive(Clone)]
+#[derive(PartialEq, Eq)]
+pub struct EffectHandlerDeclaration {
+    pub effect: Effect,
+    pub arguments: Vec<TypedIdentifier>,
+    pub expression: Box<Expression>,
 }

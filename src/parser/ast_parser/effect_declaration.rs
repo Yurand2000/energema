@@ -7,7 +7,7 @@ pub fn parse_effect_declaration<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>,
     let mut in_types = None;
     let mut out_type = None;
 
-    let (stream, _) = apply((
+    let (stream, _) = context("effect declaration", apply((
         skip(single_tag(Keyword::Effect)),
         cut(apply((
             keep(&mut name, identifier),
@@ -21,7 +21,7 @@ pub fn parse_effect_declaration<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>,
             ))),
             skip(single_tag(Symbol::Semicolon)),
         ))),
-    ))(input)?;
+    )))(input)?;
 
     Ok((stream, EffectDeclaration{ name: name.unwrap(), in_types: in_types.unwrap(), out_type }))
 }
