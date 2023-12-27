@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use super::*;
 
 pub fn parse_type<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Type, E>
@@ -56,7 +58,7 @@ pub fn parse_computation_effects<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>
     let mut inverted = None;
     let mut effects = None;
 
-    let (stream, _) = apply((
+    let (stream, parsed) = opt(apply((
         skip(single_tag(Symbol::Exclamation)),
         cut(braces(
             apply((
@@ -64,15 +66,19 @@ pub fn parse_computation_effects<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>
                 keep(&mut effects, separated_list0(list_separator, parse_effect_name))
             )),
         ))
-    ))(input)?;
+    )))(input)?;
 
-    let inverted = inverted.unwrap().is_some();
-    let effects = effects.unwrap().into_iter().collect();
-
-    if !inverted {
-        Ok((stream, ComputationEffects::AtMost(effects)))
+    if parsed.is_some() {
+        let inverted = inverted.unwrap().is_some();
+        let effects = effects.unwrap().into_iter().collect();
+    
+        if !inverted {
+            Ok((stream, ComputationEffects::AtMost(effects)))
+        } else {
+            Ok((stream, ComputationEffects::AllBut(effects)))
+        }
     } else {
-        Ok((stream, ComputationEffects::AllBut(effects)))
+        Ok((stream, ComputationEffects::AllBut(HashSet::new())))
     }
 }
 
@@ -99,15 +105,26 @@ pub fn parse_handler_type<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Type,
 {
     let mut in_type = None;
     let mut out_type = None;
+    let mut effects = None;
 
     let (stream, _) = apply((
         skip(single_tag(Keyword::Handler)),
         cut(apply((
-            keep(&mut in_type, parse_computation_type),
-            skip(single_tag(Symbol::Arrow)),
-            keep(&mut out_type, parse_computation_type),
+            keep(&mut in_type, parse_type),
+            skip(single_tag(Symbol::DoubleArrow)),
+            keep(&mut out_type, parse_type),
+            skip(single_tag(Symbol::Exclamation)),
+            brackets(
+                keep(&mut effects, separated_list0(list_separator, parse_effect_name))
+            ),
         ))),
     ))(input)?;
 
-    Ok((stream, Type::Handler { in_type: Box::new(in_type.unwrap()), out_type: Box::new(out_type.unwrap()) }))
+    let in_type = ComputationType { typ: in_type.unwrap(), effects: ComputationEffects::AllBut(HashSet::new()) };
+    let out_type = ComputationType { typ: out_type.unwrap(), effects: ComputationEffects::AllBut(effects.unwrap().into_iter().collect()) };
+
+    Ok((stream, Type::Handler {
+        in_type: Box::new(in_type),
+        out_type: Box::new(out_type)
+    }))
 }
