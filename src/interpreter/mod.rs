@@ -23,7 +23,7 @@ use interpreter_data::*;
 pub struct Declarations {
     functions: HashMap<Identifier, IFunDeclaration>,
     handlers: HashMap<Identifier, IHandlerDeclaration>,
-    effects: HashMap<Identifier, EffectDeclaration>,
+    effects: HashMap<Effect, EffectDeclaration>,
 
     native_functions: HashMap<Identifier, NativeFun>
 }
@@ -69,8 +69,8 @@ impl Interpreter {
                 Self::interpret_fn_call((function, arguments), env),
             IExpression::EffectCall { effect, arguments } =>
                 Self::interpret_effect_call((effect, arguments), env),
-            IExpression::HandlingInstall { handler, computation } =>
-                Self::interpret_handler_install((handler, computation), env),
+            IExpression::HandlingInstall { handler, arguments, computation } =>
+                Self::interpret_handler_install((handler, arguments, computation), env),
             IExpression::UnaryOp(op, expr) =>
                 Self::interpret_unary_op((op, expr), env),
             IExpression::BinaryOp(lexpr, op, rexpr) =>

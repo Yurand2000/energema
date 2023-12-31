@@ -3,12 +3,13 @@ use super::*;
 pub fn parse_handler_declaration<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, HandlerDeclaration, E>
     where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
 {
-    let mut name = None;
-    let mut arguments = None;
-    let mut out_type = None;
-    let mut return_handler = None;
-    let mut effect_handlers0 = None;
-    let mut effect_handlers1 = None;
+    let mut has_return_handler = false;
+    let mut name = PNone;
+    let mut arguments = PNone;
+    let mut out_type = PNone;
+    let mut return_handler = PNone;
+    let mut effect_handlers0 = PNone;
+    let mut effect_handlers1 = PNone;
 
     let (stream, _) = context("handler declaration", apply((
         skip(single_tag(Keyword::Handler)),
@@ -18,7 +19,7 @@ pub fn parse_handler_declaration<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>
             keep(&mut out_type, opt(parse_out_type)),
             braces(
                 alt((
-                    context("with return handler", apply((
+                    has_success(&mut has_return_handler, context("with return handler", apply((
                         keep(&mut return_handler, parse_return_handler),
                         alt((
                             apply((
@@ -28,7 +29,7 @@ pub fn parse_handler_declaration<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>
                             )),
                             skip(opt(list_separator)),
                         ))
-                    ))),
+                    )))),
                     context("without return handler", apply((
                         keep(&mut effect_handlers1, separated_list0(list_separator, parse_effect_handler)),
                         skip(opt(list_separator)),
@@ -38,21 +39,30 @@ pub fn parse_handler_declaration<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>
         ))),
     )))(input)?;
 
-    let effect_handlers = effect_handlers0.unwrap_or( effect_handlers1.unwrap_or(Vec::new()) );
-    Ok((stream, HandlerDeclaration{
-        name: name.unwrap(),
-        return_handler,
-        arguments: arguments.unwrap(),
-        out_type: out_type.unwrap(),
-        effect_handlers,
-    }))
+    if has_return_handler {
+        Ok((stream, HandlerDeclaration{
+            name: name.take(),
+            return_handler: Some(return_handler.take()),
+            arguments: arguments.take(),
+            out_type: out_type.take(),
+            effect_handlers: effect_handlers0.take(),
+        }))
+    } else {
+        Ok((stream, HandlerDeclaration{
+            name: name.take(),
+            return_handler: None,
+            arguments: arguments.take(),
+            out_type: out_type.take(),
+            effect_handlers: effect_handlers1.take(),
+        }))
+    }
 }
 
 pub fn parse_return_handler<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, ReturnHandlerDeclaration, E>
     where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
 {
-    let mut argument = None;
-    let mut body = None;
+    let mut argument = PNone;
+    let mut body = PNone;
 
     let (stream, _) = context("return handler", apply((
         skip(single_tag(Keyword::Return)),
@@ -63,17 +73,17 @@ pub fn parse_return_handler<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Ret
     )))(input)?;
 
     Ok((stream, ReturnHandlerDeclaration {
-        ret_arg: argument.unwrap(),
-        expression: Box::new(body.unwrap()),
+        ret_arg: argument.take(),
+        expression: Box::new(body.take()),
     }))
 }
 
 pub fn parse_effect_handler<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, EffectHandlerDeclaration, E>
     where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
 {
-    let mut effect = None;
-    let mut arguments = None;
-    let mut body = None;
+    let mut effect = PNone;
+    let mut arguments = PNone;
+    let mut body = PNone;
 
     let (stream, _) = context("effect handler", apply((
         keep(&mut effect, parse_effect_name),
@@ -82,9 +92,9 @@ pub fn parse_effect_handler<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Eff
     )))(input)?;
 
     Ok(( stream, EffectHandlerDeclaration {
-        effect: effect.unwrap(),
-        arguments: arguments.unwrap(),
-        expression: Box::new(body.unwrap()),
+        effect: effect.take(),
+        arguments: arguments.take(),
+        expression: Box::new(body.take()),
     }))
 }
 

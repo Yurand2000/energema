@@ -149,10 +149,10 @@ pub enum IExpression {
     If{ guard: Box<IExpression>, then_b: Box<IExpression>, else_b: Box<IExpression> },
     While{ guard: Box<IExpression>, block: Box<IExpression> },
     FunctionCall{ function: Box<IExpression>, arguments: Vec<IExpression> },
-    EffectCall{ effect: Effect, arguments: Vec<IExpression> },                  //substitute with VarValue($effret), transform the expression(from the root) to a continuation value
-    HandlingInstall{ handler: Identifier, computation: Box<IExpression> },      //substitute with Handling(Block(expression))
-    ClosureCreate{ arguments: Vec<Identifier>, computation: Box<IExpression> }, //substitute with Value(Closure)
-    BlockCreate( Box<IExpression> ),                                            //substitute with Block
+    EffectCall{ effect: Effect, arguments: Vec<IExpression> },                                              //substitute with VarValue($effret), transform the expression(from the root) to a continuation value
+    HandlingInstall{ handler: Identifier, arguments: Vec<IExpression>, computation: Box<IExpression> },     //substitute with Handling(Block(expression))
+    ClosureCreate{ arguments: Vec<Identifier>, computation: Box<IExpression> },                             //substitute with Value(Closure)
+    BlockCreate( Box<IExpression> ),                                                                        //substitute with Block
 
     UnaryOp(UnaryOp, Box<IExpression>),
     BinaryOp(Box<IExpression>, BinaryOp, Box<IExpression>),
@@ -210,11 +210,11 @@ impl From<Expression> for IExpression {
             Expression::While { guard, block } => IExpression::While { guard: guard.into(), block: block.into() },
             Expression::FunCall { function, arguments } => IExpression::FunctionCall { function: function.into(), arguments: IExpression::vector(arguments) },
             Expression::EffCall { effect, arguments } => IExpression::EffectCall { effect, arguments: IExpression::vector(arguments) },
-            Expression::Handling { handler, computation } => IExpression::HandlingInstall { handler, computation: computation.into() },
+            Expression::Handling { handler, arguments, computation } => IExpression::HandlingInstall { handler, arguments: IExpression::vector(arguments), computation: computation.into() },
             Expression::UnaryOp(op, expr) => IExpression::UnaryOp(op, expr.into()),
             Expression::BinaryOp(lexpr, op, rexpr) => IExpression::BinaryOp(lexpr.into(), op, rexpr.into()),
             Expression::Block(expression) => IExpression::BlockCreate(expression.into()),
-            Expression::Closure { arguments, computation } => IExpression::ClosureCreate { arguments, computation: computation.into() },
+            Expression::ClosureCreate { arguments, closure: computation } => IExpression::ClosureCreate { arguments, computation: computation.into() },
         }
     }
 }
@@ -307,8 +307,8 @@ impl std::fmt::Display for IExpression {
                 f.write_fmt(format_args!("Call {}\n{}", function, Pad(Arguments(arguments), false))),
             IExpression::EffectCall { effect, arguments } =>
                 f.write_fmt(format_args!("EffCall {:?}\n{}", effect, Pad(Arguments(arguments), false))),
-            IExpression::HandlingInstall { handler, computation } =>
-                f.write_fmt(format_args!("With {}() handle [leaf in tree]\n{}", handler.0, Pad(computation, false))),
+            IExpression::HandlingInstall { handler, arguments, computation } =>
+                f.write_fmt(format_args!("With {}({}) handle [leaf in tree]\n{}", handler.0, Pad(Arguments(arguments), false), Pad(computation, false))),
             IExpression::UnaryOp(op, expr) =>
                 f.write_fmt(format_args!("{:?}{}", op, expr)),
             IExpression::BinaryOp(lexpr, op, rexpr) =>

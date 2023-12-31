@@ -3,9 +3,9 @@ use super::*;
 pub fn parse_if_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expression, E>
     where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
 {
-    let mut guard = None;
-    let mut then_b = None;
-    let mut else_b = None;
+    let mut guard = PNone;
+    let mut then_b = PNone;
+    let mut else_b = PNone;
 
     let (stream, _) = apply((
         skip(single_tag(Keyword::If)),
@@ -17,14 +17,14 @@ pub fn parse_if_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expr
         ))),
     ))(input)?;
 
-    Ok((stream, Expression::If { guard: Box::new(guard.unwrap()), then_b: Box::new(then_b.unwrap()), else_b: Box::new(else_b.unwrap()) }))
+    Ok((stream, Expression::If { guard: Box::new(guard.take()), then_b: Box::new(then_b.take()), else_b: Box::new(else_b.take()) }))
 }
 
 pub fn parse_while_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expression, E>
     where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
 {
-    let mut guard = None;
-    let mut block = None;
+    let mut guard = PNone;
+    let mut block = PNone;
 
     let (stream, _) = apply((
         skip(single_tag(Keyword::While)),
@@ -34,5 +34,5 @@ pub fn parse_while_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, E
         ))),
     ))(input)?;
 
-    Ok((stream, Expression::While { guard: Box::new(guard.unwrap()), block: Box::new(block.unwrap()) }))
+    Ok((stream, Expression::While { guard: Box::new(guard.take()), block: Box::new(block.take()) }))
 }

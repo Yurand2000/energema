@@ -12,20 +12,20 @@ pub fn identifier<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Identifier, E
 pub fn parse_effect_name<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Effect, E>
     where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
 {
-    let mut typ = None;
+    let mut typ = PNone;
 
     let (stream, _) = context("effect", apply((
         keep(&mut typ, identifier),
     )))(input)?;
 
-    Ok((stream, Effect{ eff_type: typ.unwrap() }))
+    Ok((stream, Effect{ eff_type: typ.take() }))
 }
 
 pub fn parse_typed_identifier<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, TypedIdentifier, E>
     where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
 {
-    let mut id = None;
-    let mut typ = None;
+    let mut id = PNone;
+    let mut typ = PNone;
 
     let (stream, _) = context("typed identifier", apply((
         keep(&mut id, identifier),
@@ -35,7 +35,7 @@ pub fn parse_typed_identifier<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, T
         ))),
     )))(input)?;
 
-    Ok((stream, TypedIdentifier{ id: id.unwrap(), typ: typ.unwrap()  }))
+    Ok((stream, TypedIdentifier{ id: id.take(), typ: typ.take()  }))
 }
 
 pub fn specific_identifier<'a, 'b, E>(id: &'b str) -> impl FnMut(Stream<'a>) -> IResult<Stream<'a>, Identifier, E> + 'b

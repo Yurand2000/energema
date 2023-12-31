@@ -36,8 +36,8 @@ pub enum Expression {
     While{ guard: Box<Expression>, block: Box<Expression> },
     FunCall{ function: Box<Expression>, arguments: Vec<Expression> },
     EffCall{ effect: Effect, arguments: Vec<Expression> },
-    Handling{ handler: Identifier, computation: Box<Expression> },
-    Closure{ arguments: Vec<Identifier>, computation: Box<Expression> },
+    Handling{ handler: Identifier, arguments: Vec<Expression>, computation: Box<Expression> },
+    ClosureCreate{ arguments: Vec<Identifier>, closure: Box<Expression> },
     Block( Box<Expression> ),
 
     UnaryOp(UnaryOp, Box<Expression>),

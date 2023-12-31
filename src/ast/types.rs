@@ -11,8 +11,26 @@ pub enum Type {
     Rune,
     String,
     Computation(Box<ComputationType>),
-    Fun{ in_types: Vec<Type>, out_type: Box<ComputationType> },
-    Handler{ in_type: Box<ComputationType>, out_type: Box<ComputationType> },
+    Fun(Box<FunctionType>),
+    Handler(Box<HandlerType>),
+}
+
+#[derive(Debug)]
+#[derive(Clone)]
+#[derive(PartialEq, Eq)]
+pub struct FunctionType {
+    pub arguments: Vec<Type>,
+    pub out_type: ComputationType
+}
+
+#[derive(Debug)]
+#[derive(Clone)]
+#[derive(PartialEq, Eq)]
+pub struct HandlerType {
+    pub arguments: Vec<Type>,
+    pub in_type: Type,
+    pub out_type: Type,
+    pub managed_effects: Vec<Effect>,
 }
 
 #[derive(Debug)]

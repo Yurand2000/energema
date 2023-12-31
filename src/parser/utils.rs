@@ -1,5 +1,10 @@
 use nom::IResult;
 
+pub enum ParserOption<T> {
+    PNone,
+    Some(T)
+}
+
 pub fn skip<I, O, E>(mut fun: impl FnMut(I) -> IResult<I, O, E>) ->
     impl FnMut(I) -> IResult<I, (), E>
 {
@@ -8,12 +13,36 @@ pub fn skip<I, O, E>(mut fun: impl FnMut(I) -> IResult<I, O, E>) ->
     }
 }
 
-pub fn keep<'a, 'b: 'a, I, O, E>(data: &'a mut Option<O>, mut fun: impl FnMut(I) -> IResult<I, O, E> + 'b) ->
+pub fn keep<'a, 'b: 'a, I, O, E>(data: &'a mut ParserOption<O>, mut fun: impl FnMut(I) -> IResult<I, O, E> + 'b) ->
     impl FnMut(I) -> IResult<I, (), E> + 'a
 {
     move |input: I| {
         fun(input).map(|(out_stream, out_data)| {
-            *data = Some(out_data);
+            *data = ParserOption::Some(out_data);
+            (out_stream, ())
+        })
+    }
+}
+
+pub fn has_success<'a, 'b: 'a, I, O, E>(data: &'a mut bool, mut fun: impl FnMut(I) -> IResult<I, O, E> + 'b) ->
+    impl FnMut(I) -> IResult<I, (), E> + 'a
+{
+    *data = false;
+    move |input: I| {
+        fun(input).map(|(out_stream, _)| {
+            *data = true;
+            (out_stream, ())
+        })
+    }
+}
+
+pub fn opt_success<'a, 'b: 'a, I, O, E>(data: &'a mut bool, mut fun: impl FnMut(I) -> IResult<I, Option<O>, E> + 'b) ->
+    impl FnMut(I) -> IResult<I, (), E> + 'a
+{
+    *data = false;
+    move |input: I| {
+        fun(input).map(|(out_stream, res)| {
+            *data = res.is_some();
             (out_stream, ())
         })
     }
@@ -48,5 +77,18 @@ where F1: FnMut(I) -> IResult<I, O1, E>, F2: FnMut(I) -> IResult<I, O2, E>
         let (out, data) = p2(next)?;
 
         Ok((out, data))
+    }
+}
+
+impl<T> ParserOption<T> {
+    pub fn take(self) -> T {
+        self.to_option().unwrap()
+    }
+
+    pub fn to_option(self) -> Option<T> {
+        match self {
+            ParserOption::PNone => None,
+            ParserOption::Some(val) => Some(val),
+        }
     }
 }

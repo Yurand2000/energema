@@ -5,20 +5,20 @@ use super::*;
 pub fn parse_type<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Type, E>
     where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
 {
-    let mut typ = None;
-    let mut effects = None;
+    let mut typ = PNone;
+    let mut effects = PNone;
 
     let (stream, _) = context("type", apply((
         keep(&mut typ, parse_type_no_computation),
         keep(&mut effects, opt(parse_computation_effects)),
     )))(input)?;
 
-    match effects.unwrap() {
+    match effects.take() {
         Some(effects) => {
-            let computation_type = ComputationType{ typ: typ.unwrap(), effects };
+            let computation_type = ComputationType{ typ: typ.take(), effects };
             Ok((stream, Type::Computation(Box::new(computation_type))))
         },
-        None => Ok((stream, typ.unwrap())),
+        None => Ok((stream, typ.take())),
     }
 }
 
@@ -41,24 +41,25 @@ pub fn parse_type_no_computation<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>
 pub fn parse_computation_type<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, ComputationType, E>
     where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
 {
-    let mut typ = None;
-    let mut effects = None;
+    let mut typ = PNone;
+    let mut effects = PNone;
 
     let (stream, _) = apply((
         keep(&mut typ, parse_type_no_computation),
         keep(&mut effects, parse_computation_effects),
     ))(input)?;
 
-    Ok((stream, ComputationType{ typ: typ.unwrap(), effects: effects.unwrap() }))
+    Ok((stream, ComputationType{ typ: typ.take(), effects: effects.take() }))
 }
 
 pub fn parse_computation_effects<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, ComputationEffects, E>
     where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
 {
-    let mut inverted = None;
-    let mut effects = None;
+    let mut success = false;
+    let mut inverted = PNone;
+    let mut effects = PNone;
 
-    let (stream, parsed) = opt(apply((
+    let (stream, _) = has_success(&mut success, apply((
         skip(single_tag(Symbol::Exclamation)),
         cut(braces(
             apply((
@@ -68,9 +69,9 @@ pub fn parse_computation_effects<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>
         ))
     )))(input)?;
 
-    if parsed.is_some() {
-        let inverted = inverted.unwrap().is_some();
-        let effects = effects.unwrap().into_iter().collect();
+    if success {
+        let inverted = inverted.take().is_some();
+        let effects = effects.take().into_iter().collect();
     
         if !inverted {
             Ok((stream, ComputationEffects::AtMost(effects)))
@@ -85,46 +86,48 @@ pub fn parse_computation_effects<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>
 pub fn parse_function_type<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Type, E>
     where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
 {
-    let mut in_types = None;
-    let mut out_type = None;
+    let mut arguments = PNone;
+    let mut out_type = PNone;
 
     let (stream, _) = apply((
         skip(single_tag(Keyword::Fn)),
         cut(apply((
-            keep(&mut in_types, parenthesis(separated_list0(list_separator, parse_type))),
+            keep(&mut arguments, parenthesis(separated_list0(list_separator, parse_type))),
             skip(single_tag(Symbol::Arrow)),
             keep(&mut out_type, parse_computation_type),
         ))),
     ))(input)?;
 
-    Ok((stream, Type::Fun { in_types: in_types.unwrap(), out_type: Box::new(out_type.unwrap()) }))
+    let typ = FunctionType{ arguments: arguments.take(), out_type: out_type.take() };
+    Ok((stream, Type::Fun(Box::new(typ))))
 }
 
 pub fn parse_handler_type<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Type, E>
     where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
 {
-    let mut in_type = None;
-    let mut out_type = None;
-    let mut effects = None;
+    let mut arguments = PNone;
+    let mut in_type = PNone;
+    let mut out_type = PNone;
+    let mut effects = PNone;
 
     let (stream, _) = apply((
         skip(single_tag(Keyword::Handler)),
         cut(apply((
+            keep(&mut arguments, parenthesis(separated_list0(list_separator, parse_type))),
             keep(&mut in_type, parse_type),
             skip(single_tag(Symbol::DoubleArrow)),
             keep(&mut out_type, parse_type),
             skip(single_tag(Symbol::Exclamation)),
-            brackets(
-                keep(&mut effects, separated_list0(list_separator, parse_effect_name))
-            ),
+            keep(&mut effects, brackets(separated_list0(list_separator, parse_effect_name))),
         ))),
     ))(input)?;
 
-    let in_type = ComputationType { typ: in_type.unwrap(), effects: ComputationEffects::AllBut(HashSet::new()) };
-    let out_type = ComputationType { typ: out_type.unwrap(), effects: ComputationEffects::AllBut(effects.unwrap().into_iter().collect()) };
+    let typ = HandlerType {
+        arguments: arguments.take(),
+        in_type: in_type.take(),
+        out_type: out_type.take(),
+        managed_effects: effects.take()
+    };
 
-    Ok((stream, Type::Handler {
-        in_type: Box::new(in_type),
-        out_type: Box::new(out_type)
-    }))
+    Ok((stream, Type::Handler(Box::new(typ))))
 }

@@ -3,36 +3,37 @@ use super::*;
 pub fn parse_unary_op_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expression, E>
     where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
 {
-    let mut operator = None;
-    let mut expr0 = None;
-    let mut expr1 = None;
+    let mut is_unary = false;
+    let mut operator = PNone;
+    let mut expr0 = PNone;
+    let mut expr1 = PNone;
 
     let (stream, _) = context("unary expression", alt((
-        apply((
+        has_success(&mut is_unary, apply((
             keep(&mut operator, parse_unary_operator),
             cut(keep(&mut expr0, parse_function_call_expression)),
-        )),
+        ))),
         keep(&mut expr1, parse_function_call_expression),
     )))(input)?;
 
-    if expr1.is_some() {
-        Ok((stream, expr1.unwrap()))
+    if !is_unary {
+        Ok((stream, expr1.take()))
     } else {
-        Ok((stream, Expression::UnaryOp(operator.unwrap(), Box::new(expr0.unwrap()))))
+        Ok((stream, Expression::UnaryOp(operator.take(), Box::new(expr0.take()))))
     }
 }
 
 pub fn parse_binary_op_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expression, E>
     where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
 {
-    let mut operator = None;
-    let mut is_binary = None;
-    let mut lexpr = None;
-    let mut rexpr = None;
+    let mut operator = PNone;
+    let mut is_binary = false;
+    let mut lexpr = PNone;
+    let mut rexpr = PNone;
 
     let (stream, _) = context("binary expression", apply((
         keep(&mut lexpr, parse_unary_op_expression),
-        keep(&mut is_binary,
+        opt_success(&mut is_binary,
             opt(apply((
                 keep(&mut operator, parse_binary_operator),
                 cut(keep(&mut rexpr, parse_binary_op_expression)),
@@ -40,11 +41,10 @@ pub fn parse_binary_op_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a
         ),
     )))(input)?;
 
-    let (lexpr, is_binary) = (lexpr.unwrap(), is_binary.unwrap());
-    if is_binary.is_some() {
-        Ok((stream, Expression::BinaryOp(Box::new(lexpr), operator.unwrap(), Box::new(rexpr.unwrap()))))
+    if is_binary {
+        Ok((stream, Expression::BinaryOp(Box::new(lexpr.take()), operator.take(), Box::new(rexpr.take()))))
     } else {
-        Ok((stream, lexpr))
+        Ok((stream, lexpr.take()))
     }
 }
 

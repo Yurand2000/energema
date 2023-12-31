@@ -54,7 +54,7 @@ impl Environment {
     }
 
     pub fn search_effect(&self, effect: &Effect) -> Option<&EffectDeclaration> {
-        self.declarations.effects.get(&effect.eff_type)
+        self.declarations.effects.get(&effect)
     }
 
     pub fn attach_block(&mut self, record: ActivationRecord) {

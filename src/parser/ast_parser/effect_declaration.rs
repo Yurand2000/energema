@@ -3,25 +3,23 @@ use super::*;
 pub fn parse_effect_declaration<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, EffectDeclaration, E>
     where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
 {
-    let mut name = None;
-    let mut in_types = None;
-    let mut out_type = None;
+    let mut name = PNone;
+    let mut in_types = PNone;
+    let mut out_type = PNone;
 
     let (stream, _) = context("effect declaration", apply((
         skip(single_tag(Keyword::Effect)),
         cut(apply((
-            keep(&mut name, identifier),
+            keep(&mut name, parse_effect_name),
             skip(single_tag(Symbol::Colon)),
             keep(&mut in_types, separated_list1(list_separator, parse_type)),
-            opt(apply((
-                skip(single_tag(Symbol::Arrow)),
-                cut(apply((
-                    keep(&mut out_type, parse_type),
-                )))
+            keep(&mut out_type, opt(second(
+                single_tag(Symbol::Arrow),
+                cut(parse_type),
             ))),
             skip(single_tag(Symbol::Semicolon)),
         ))),
     )))(input)?;
 
-    Ok((stream, EffectDeclaration{ name: name.unwrap(), in_types: in_types.unwrap(), out_type }))
+    Ok((stream, EffectDeclaration{ name: name.take(), in_types: in_types.take(), out_type: out_type.take() }))
 }

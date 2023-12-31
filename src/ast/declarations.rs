@@ -13,7 +13,7 @@ pub enum Declaration {
 #[derive(Clone)]
 #[derive(PartialEq, Eq)]
 pub struct  EffectDeclaration {
-    pub name: Identifier,
+    pub name: Effect,
     pub in_types: Vec<Type>,
     pub out_type: Option<Type>,
 }

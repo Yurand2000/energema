@@ -12,6 +12,7 @@ use nom::{
 use crate::ast::*;
 use crate::parser::tokens::{TokenStream, LocatedToken, Token, TokenType, Keyword, Symbol};
 use crate::parser::utils::*;
+use crate::parser::utils::ParserOption::PNone;
 
 mod utils;
 use utils::*;
@@ -45,7 +46,7 @@ mod stream_display;
 type TestError<'a> = nom::error::Error<Stream<'a>>;
 
 pub fn parse_code(code: &str) -> Result<Vec<Declaration>, String> {
-    let mut declarations = None;
+    let mut declarations = PNone;
 
     let input = tokenize(code)?;
     let input = TokenStream::new(&input);
@@ -55,7 +56,7 @@ pub fn parse_code(code: &str) -> Result<Vec<Declaration>, String> {
     ))(input);
 
     match result {
-        Ok(_) => Ok(declarations.unwrap()),
+        Ok(_) => Ok(declarations.take()),
         Err(Err::Error(err)) => Err(format!("{}", err)),
         Err(Err::Failure(err)) => Err(format!("{}", err)),
         Err(Err::Incomplete(_)) => todo!(),
@@ -90,72 +91,76 @@ fn parse_single_line_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>,
 pub fn parse_block_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expression, E>
     where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
 {
-    let mut body = None;
+    let mut body = PNone;
 
     let (stream, _) = context("block", apply((
         keep(&mut body, braces(parse_sequencing_expression)),
     )))(input)?;
 
-    Ok((stream, body.unwrap()) )
+    Ok((stream, body.take()) )
 }
 
 pub fn parse_explicit_block_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expression, E>
     where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
 {
-    let mut body = None;
+    let mut body = PNone;
 
     let (stream, _) = context("explicit block", apply((
         keep(&mut body, parse_block_expression),
     )))(input)?;
 
-    Ok((stream, Expression::Block( Box::new(body.unwrap()) )))
+    Ok((stream, Expression::Block( Box::new(body.take()) )))
 }
 
 fn parse_sequencing_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expression, E>
     where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
 {
-    let mut lexpr = None;
-    let mut is_sequencing = None;
-    let mut rexpr = None;
+    let mut lexpr = PNone;
+    let mut is_sequencing = PNone;
+    let mut rexpr = PNone;
 
     let (stream, _) = context("sequencing", apply((
         keep(&mut lexpr, parse_let_expression),
         keep(&mut is_sequencing, opt(apply((
             single_tag(Symbol::Semicolon),
-            cut(keep(&mut rexpr, parse_sequencing_expression)))))
+            keep(&mut rexpr, opt(parse_sequencing_expression)))))
         ),
     )))(input)?;
 
-    if is_sequencing.unwrap().is_some() {
-        Ok((stream, Expression::Sequencing(Box::new(lexpr.unwrap()), Box::new(rexpr.unwrap()))))
+    if is_sequencing.take().is_some() {
+        Ok((stream, Expression::Sequencing(
+            Box::new(lexpr.take()),
+            Box::new(rexpr.take().unwrap_or(Expression::Value(Box::new(Value::ULiteral))))
+        )))
     } else {
-        Ok((stream, lexpr.unwrap()))
+        Ok((stream, lexpr.take()))
     }
 }
 
 fn parse_let_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expression, E>
     where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
 {
-    let mut id = None;
-    let mut expr0 = None;
-    let mut expr1 = None;
+    let mut is_let = false;
+    let mut id = PNone;
+    let mut expr0 = PNone;
+    let mut expr1 = PNone;
 
     let (stream, _) = context("let", alt((
-        apply((
+        has_success(&mut is_let, apply((
             skip(single_tag(Keyword::Let)),
             cut(apply((
                 keep(&mut id, identifier),
                 skip(single_tag(Symbol::Equal)),
                 keep(&mut expr0, parse_binary_op_expression),
             )))
-        )),
+        ))),
         keep(&mut expr1, parse_binary_op_expression),
     )))(input)?;
 
-    if expr1.is_some() {
-        Ok((stream, expr1.unwrap()))
+    if !is_let {
+        Ok((stream, expr1.take()))
     } else {
-        Ok((stream, Expression::Let { id: id.unwrap(), expression: Box::new(expr0.unwrap()) }))
+        Ok((stream, Expression::Let { id: id.take(), expression: Box::new(expr0.take()) }))
     }
 }
 
@@ -164,12 +169,12 @@ fn parse_expression_top_precedence<'a, E>(input: Stream<'a>) -> IResult<Stream<'
 {
     context("top precedence", alt((
         parenthesis(parse_single_line_expression),
+        parse_closure_create,
         parse_explicit_block_expression,
         parse_if_expression,
         parse_while_expression,
         parse_effect_call_expression,
         parse_handler_install_expression,
-        parse_closure_create,
         parse_variable,
         parse_value_expression,
     )))(input)
@@ -178,16 +183,16 @@ fn parse_expression_top_precedence<'a, E>(input: Stream<'a>) -> IResult<Stream<'
 pub fn parse_closure_create<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expression, E>
     where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
 {
-    let mut arguments = None;
-    let mut computation = None;
+    let mut arguments = PNone;
+    let mut closure = PNone;
 
     let (stream, _) = context("closure create", apply((
         alt((
             keep(&mut arguments, pipe_brackets(separated_list0(list_separator, identifier))),
             skip(single_tag(Symbol::LogicalOr)),
         )),
-        cut(keep(&mut computation, parse_expression)),
+        cut(keep(&mut closure, parse_expression)),
     )))(input)?;
 
-    Ok((stream, Expression::Closure { arguments: arguments.unwrap_or_else(|| Vec::new()), computation: Box::new(computation.unwrap()) }))
+    Ok((stream, Expression::ClosureCreate { arguments: arguments.take(), closure: Box::new(closure.take()) }))
 }

@@ -148,7 +148,7 @@ impl<'a> StatefulParser<'a> {
     fn parse<T>(&mut self, parser: impl FnMut(Span<'a>) -> IResult<Span<'a>, T>) -> Result<T, String>
     {
         let data = std::mem::replace(&mut self.span, Span::from(""));
-        let mut out_data = None;
+        let mut out_data = PNone;
         let result = apply((
             keep(&mut out_data, parser),
             skip(space0),
@@ -157,7 +157,7 @@ impl<'a> StatefulParser<'a> {
         match result {
             Ok((mut span, _)) => {
                 std::mem::swap(&mut self.span, &mut span);
-                Ok(out_data.unwrap())
+                Ok(out_data.take())
             },
             Err(err) => Err(err.to_string()),
         }
@@ -166,7 +166,7 @@ impl<'a> StatefulParser<'a> {
     fn parse_no_space<T>(&mut self, parser: impl FnMut(Span<'a>) -> IResult<Span<'a>, T>) -> Result<T, String>
     {
         let data = std::mem::replace(&mut self.span, Span::from(""));
-        let mut out_data = None;
+        let mut out_data = PNone;
         let result = apply((
             keep(&mut out_data, parser),
         ))(data);
@@ -174,7 +174,7 @@ impl<'a> StatefulParser<'a> {
         match result {
             Ok((mut span, _)) => {
                 std::mem::swap(&mut self.span, &mut span);
-                Ok(out_data.unwrap())
+                Ok(out_data.take())
             },
             Err(err) => Err(err.to_string()),
         }

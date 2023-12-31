@@ -3,15 +3,15 @@ use super::*;
 pub fn parse_function_call_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expression, E>
     where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
 {
-    let mut expr = None;
-    let mut arguments = None;
+    let mut expr = PNone;
+    let mut arguments = PNone;
 
     let (stream, _) = context("function call", apply((
         keep(&mut expr, parse_expression_top_precedence),
         keep(&mut arguments, opt(parenthesis(separated_list0(list_separator, parse_single_line_expression)))),
     )))(input)?;
 
-    let (function, arguments) = (expr.unwrap(), arguments.unwrap());
+    let (function, arguments) = (expr.take(), arguments.take());
     if arguments.is_some() {
         Ok((stream, Expression::FunCall { function: Box::new(function), arguments: arguments.unwrap() }))
     } else {
@@ -22,8 +22,8 @@ pub fn parse_function_call_expression<'a, E>(input: Stream<'a>) -> IResult<Strea
 pub fn parse_effect_call_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expression, E>
     where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
 {
-    let mut effect = None;
-    let mut arguments = None;
+    let mut effect = PNone;
+    let mut arguments = PNone;
 
     let (stream, _) = context("effect call", apply((
         skip(single_tag(Keyword::Perform)),
@@ -33,24 +33,24 @@ pub fn parse_effect_call_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<
         ))),
     )))(input)?;
 
-    Ok((stream, Expression::EffCall { effect: effect.unwrap(), arguments: arguments.unwrap() }))
+    Ok((stream, Expression::EffCall { effect: effect.take(), arguments: arguments.take() }))
 }
 
 pub fn parse_handler_install_expression<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Expression, E>
     where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
 {
-    let mut handler = None;
-    let mut expr = None;
+    let mut handler = PNone;
+    let mut arguments = PNone;
+    let mut expr = PNone;
 
     let (stream, _) = context("handler install", apply((
         skip(single_tag(Keyword::With)),
         cut(apply((
             keep(&mut handler, identifier),
-            skip(single_tag(Symbol::OpenParenthesis)),
-            skip(single_tag(Symbol::CloseParentesis)),
+            keep(&mut arguments, parenthesis(separated_list0(list_separator, parse_single_line_expression))),
             keep(&mut expr, parse_block_expression),
         ))),
     )))(input)?;
 
-    Ok((stream, Expression::Handling { handler: handler.unwrap(), computation: Box::new(expr.unwrap()) }))
+    Ok((stream, Expression::Handling { handler: handler.take(), arguments: arguments.take(), computation: Box::new(expr.take()) }))
 }

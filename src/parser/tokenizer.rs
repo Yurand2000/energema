@@ -13,14 +13,15 @@ type Span<'a> = LocatedSpan<&'a str>;
 
 use super::tokens::*;
 use super::utils::*;
+use super::utils::ParserOption::PNone;
 
 #[cfg(test)]
 mod tests;
 
 pub fn tokenize(code: &str) -> Result<Vec<LocatedToken>, String> {
     let input = Span::from(code);
-    let mut tokens = None;
-    let mut eof_position = None;
+    let mut tokens = PNone;
+    let mut eof_position = PNone;
 
     let result = apply((
         skip(space_parser0),
@@ -36,8 +37,8 @@ pub fn tokenize(code: &str) -> Result<Vec<LocatedToken>, String> {
 
     match result {
         Ok(_) => {
-            let mut tokens = tokens.unwrap();
-            tokens.push(LocatedToken::from_span(Token::Eof, eof_position.unwrap()));
+            let mut tokens = tokens.take();
+            tokens.push(LocatedToken::from_span(Token::Eof, eof_position.take()));
             Ok(tokens)
         },
         Err(err) => Err(err.to_string()),
@@ -45,15 +46,15 @@ pub fn tokenize(code: &str) -> Result<Vec<LocatedToken>, String> {
 }
 
 fn next_token(input: Span) -> IResult<Span, LocatedToken> {
-    let mut pos = None;
-    let mut token = None;
+    let mut pos = PNone;
+    let mut token = PNone;
 
     let (out, _) = apply((
         keep(&mut pos, position),
         keep(&mut token, extract_token)
     ))(input)?;
 
-    let token = LocatedToken::from_span(token.unwrap(), pos.unwrap());
+    let token = LocatedToken::from_span(token.take(), pos.take());
 
     Ok((out, token))
 }
