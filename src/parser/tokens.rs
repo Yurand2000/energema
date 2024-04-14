@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::{fmt::Debug, ops::{Index, Range}};
 
 use nom::*;
 
@@ -212,6 +212,22 @@ impl<'a, T> InputTake for TokenStream<'a, T> {
 impl<'a, T> InputLength for TokenStream<'a, T> {
     fn input_len(&self) -> usize {
         self.stream.len()
+    }
+}
+
+impl<'a, T> Index<usize> for TokenStream<'a, T> {
+    type Output = T;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.stream[index]
+    }
+}
+
+impl<'a, T> Index<Range<usize>> for TokenStream<'a, T> {
+    type Output = [T];
+
+    fn index(&self, index: Range<usize>) -> &Self::Output {
+        &self.stream[index]
     }
 }
 

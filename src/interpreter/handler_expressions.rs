@@ -2,7 +2,7 @@ use super::*;
 
 impl Interpreter {
     pub(super) fn interpret_handler_install((handler, arguments, computation): (Identifier, Vec<IExpression>, Box<IExpression>), env: &mut Environment) -> Result<IExpression, String> {
-        todo!();
+        //todo!();
         env.push_handler(handler);
         Ok(IExpression::Handling(Box::new(IExpression::Block(computation))))
     }

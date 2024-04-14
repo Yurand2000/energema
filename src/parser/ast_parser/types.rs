@@ -25,7 +25,7 @@ pub fn parse_type<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Type, E>
 pub fn parse_type_no_computation<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Type, E>
     where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
 {
-    alt((
+    context("type basic", alt((
         parenthesis(parse_type),
         value(Type::Void, single_tag(Symbol::Tilde)),
         value(Type::Unit, single_tag(TokenType::UnitLiteral)),
@@ -35,7 +35,7 @@ pub fn parse_type_no_computation<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>
         value(Type::String, specific_identifier("string")),
         parse_function_type,
         parse_handler_type
-    ))(input)
+    )))(input)
 }
 
 pub fn parse_computation_type<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, ComputationType, E>
@@ -44,10 +44,10 @@ pub fn parse_computation_type<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, C
     let mut typ = PNone;
     let mut effects = PNone;
 
-    let (stream, _) = apply((
+    let (stream, _) = context("computation type", apply((
         keep(&mut typ, parse_type_no_computation),
         keep(&mut effects, parse_computation_effects),
-    ))(input)?;
+    )))(input)?;
 
     Ok((stream, ComputationType{ typ: typ.take(), effects: effects.take() }))
 }
@@ -59,7 +59,7 @@ pub fn parse_computation_effects<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>
     let mut inverted = PNone;
     let mut effects = PNone;
 
-    let (stream, _) = has_success(&mut success, apply((
+    let (stream, _) = opt_success(&mut success, opt(apply((
         skip(single_tag(Symbol::Exclamation)),
         cut(braces(
             apply((
@@ -67,7 +67,7 @@ pub fn parse_computation_effects<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>
                 keep(&mut effects, separated_list0(list_separator, parse_effect_name))
             )),
         ))
-    )))(input)?;
+    ))))(input)?;
 
     if success {
         let inverted = inverted.take().is_some();
@@ -89,14 +89,14 @@ pub fn parse_function_type<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Type
     let mut arguments = PNone;
     let mut out_type = PNone;
 
-    let (stream, _) = apply((
+    let (stream, _) = context("function type", apply((
         skip(single_tag(Keyword::Fn)),
         cut(apply((
             keep(&mut arguments, parenthesis(separated_list0(list_separator, parse_type))),
             skip(single_tag(Symbol::Arrow)),
             keep(&mut out_type, parse_computation_type),
         ))),
-    ))(input)?;
+    )))(input)?;
 
     let typ = FunctionType{ arguments: arguments.take(), out_type: out_type.take() };
     Ok((stream, Type::Fun(Box::new(typ))))
@@ -110,7 +110,7 @@ pub fn parse_handler_type<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Type,
     let mut out_type = PNone;
     let mut effects = PNone;
 
-    let (stream, _) = apply((
+    let (stream, _) = context("handler type", apply((
         skip(single_tag(Keyword::Handler)),
         cut(apply((
             keep(&mut arguments, parenthesis(separated_list0(list_separator, parse_type))),
@@ -120,7 +120,7 @@ pub fn parse_handler_type<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Type,
             skip(single_tag(Symbol::Exclamation)),
             keep(&mut effects, brackets(separated_list0(list_separator, parse_effect_name))),
         ))),
-    ))(input)?;
+    )))(input)?;
 
     let typ = HandlerType {
         arguments: arguments.take(),

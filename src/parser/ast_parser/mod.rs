@@ -194,5 +194,5 @@ pub fn parse_closure_create<'a, E>(input: Stream<'a>) -> IResult<Stream<'a>, Exp
         cut(keep(&mut closure, parse_expression)),
     )))(input)?;
 
-    Ok((stream, Expression::ClosureCreate { arguments: arguments.take(), closure: Box::new(closure.take()) }))
+    Ok((stream, Expression::ClosureCreate { arguments: arguments.to_option().unwrap_or(Vec::new()), closure: Box::new(closure.take()) }))
 }

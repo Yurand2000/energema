@@ -2,6 +2,15 @@ use nom::InputTake;
 
 use super::*;
 
+pub fn debug<'a, 'b, E>(message: &'b str) -> impl FnMut(Stream<'a>) -> IResult<Stream<'a>, Stream<'a>, E>
+    where E: ParseError<Stream<'a>> + ContextError<Stream<'a>>, 'b: 'a
+{
+    move |input: Stream<'a>| {
+        println!("{}, at: {}", message, input);
+        Ok(input.take_split(0))
+    }
+}
+
 pub fn single_tag<'a, T, E>(token: T) -> impl FnMut(Stream<'a>) -> IResult<Stream<'a>, Stream<'a>, E>
     where T: Into<TokenType> + Clone, E: ParseError<Stream<'a>> + ContextError<Stream<'a>>
 {

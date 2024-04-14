@@ -1,0 +1,55 @@
+//Energema - Test two threads
+
+effect Get: unit -> fn() -> i32;
+effect Set: fn() -> i32;
+
+handler stateHandler() -> fn(fn() -> i32) -> i32 {
+    return(y: fn() -> i32) { |_| { y } },
+    Get(_: unit) {
+        |state| { (continuation(state))(state) }
+    },
+    Set(value: fn() -> i32) {
+        |_| { (continuation())(value) }
+    },
+}
+
+effect Yield: unit;
+
+handler singleThread() -> i32 {
+    Yield(_: unit) {
+        continuation()
+    }
+}
+
+handler multiThread() -> i32 {
+    return(y: unit) {
+        let other = perform Get();
+        perform Set(|| { with multiThread() { perform Yield() } });
+        other()
+    },
+    Yield(_: unit) {
+        let other = perform Get();
+        perform Set(continuation);
+        other()
+    }
+}
+
+fn thread(id: i32, value: i32, max: i32) -> i32 {
+    if value == max {
+        nativePrint("** thread ", id, " terminated")
+    } else {
+        nativePrint("   thread: ", id, "; value: ", value, ".");
+        let value = value + 1;
+        perform Yield();
+        thread(id, value, max)
+    }
+}
+
+fn main() {
+    let threads = with stateHandler() {
+        with multiThread() {
+            thread(1, 0, 10)
+        }
+    };
+    threads(|| { with multiThread() { thread(2, 0, 15) } })
+}
