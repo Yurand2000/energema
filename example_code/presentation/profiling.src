@@ -1,0 +1,38 @@
+//Energema - 15/04/2024 - Profiling
+
+effect Read: unit -> i32;
+effect GetBytesRead: unit -> i32;
+effect SetBytesRead: i32;
+
+handler profiler() -> fn(i32) -> i32 {
+    return(y: i32) { |_| { y } },
+    GetBytesRead(_: unit) {
+        |state| { (continuation(state))(state) }
+    },
+    SetBytesRead(value: i32) {
+        |_| { (continuation())(value) }
+    },
+}
+
+handler io() -> unit {
+    Read(_: unit) {
+        let r = nativeRead();
+        let num_bytes = perform GetBytesRead();
+        perform SetBytesRead(num_bytes + 1);
+        nativeFlushStdin();
+        continuation(r)
+    },
+}
+
+fn main() {
+    with profiler() {
+        with io() {
+            perform Read();
+            perform Read();
+            perform Read();
+            perform Read();
+            perform Read();
+            nativePrint(perform GetBytesRead());
+        }
+    }(0)
+}

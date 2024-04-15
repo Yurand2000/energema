@@ -1,0 +1,27 @@
+//Energema - 15/04/2024 - Exceptions
+
+effect DivisionByZero: unit -> i32;
+
+handler div_zero() -> unit {
+    DivisionByZero(_: unit) {
+        continuation(-1)
+    },
+}
+
+fn div(x: i32, y: i32) -> i32 {
+    if y == 0 {
+        perform DivisionByZero()
+    } else {
+        x / y
+    }
+}
+
+fn main() {
+    with div_zero() {
+        let res = div(5, 2);
+        nativePrint("5 / 2 = ", res);
+        
+        let res = div(3, 0);
+        nativePrint("3 / 0 = ", res)
+    }
+}

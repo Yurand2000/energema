@@ -36,12 +36,20 @@ fn execute_code(file: &str) -> Result<String, String> {
 
 fn execute_code_interactive(file: &str) -> Result<(), String> {
     let mut read_buffer = String::new();
+    let mut last_instruction = String::new();
     let stdin = std::io::stdin();
     let mut interpreter = parse_code(file)?;
+    println!("{}", interpreter.print_state());
 
     loop {
         while interpreter.has_next() {
             read_line(&stdin, &mut read_buffer)?;
+            if !read_buffer.is_empty() {
+                last_instruction = read_buffer.clone();
+            } else {
+                read_buffer = last_instruction.clone();
+            }
+
             if read_buffer.contains("next") {
                 interpreter.next()?;
                 println!("{}", interpreter.print_state());
@@ -77,6 +85,6 @@ fn read_line(stdin: &std::io::Stdin, buffer: &mut String) -> Result<(), String> 
     std::io::stdout().flush().unwrap();
     buffer.clear();
     stdin.read_line(buffer)
-        .map(|_| ())
+        .map(|_| { buffer.pop(); () })
         .map_err(|err| err.to_string())
 }

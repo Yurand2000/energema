@@ -1,0 +1,37 @@
+//Energema - 15/04/2024 - Non-Determinism
+
+effect Decide: unit -> bool;
+
+fn max(x: i32, y: i32) -> i32 {
+    if x < y {
+        y
+    } else {
+        x
+    }
+}
+
+fn choose(x: i32, y: i32) -> i32 {
+    let guard = perform Decide();
+    if guard { x } else { y }
+}
+
+fn chooseDiff() -> i32 {
+    let x1 = choose(15, 30);
+    let x2 = choose(5, 10);
+    x1 - x2
+}
+
+handler pickMax() -> i32 {
+    Decide(_: unit) {
+        let x1 = continuation(true);
+        let x2 = continuation(false);
+        max(x1, x2)
+    }
+}
+
+fn main() {
+    let res = with pickMax() {
+        chooseDiff()
+    };
+    nativePrint(res);
+}

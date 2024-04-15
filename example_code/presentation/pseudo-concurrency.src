@@ -1,0 +1,56 @@
+//Energema - 15/04/2024 - (Pseudo) Concurrency
+
+effect Get: unit -> fn() -> i32;
+effect Set: fn() -> i32;
+
+handler stateHandler() -> fn(fn() -> i32) -> i32 {
+    return(y: fn() -> i32) { |_| { y } },
+    Get(_: unit) {
+        |state| { (continuation(state))(state) }
+    },
+    Set(value: fn() -> i32) {
+        |_| { (continuation())(value) }
+    },
+}
+
+effect Yield: unit;
+
+handler singleThread() -> i32 {
+    Yield(_: unit) {
+        continuation()
+    }
+}
+
+handler multiThread() -> i32 {
+    return(y: unit) {
+        let other = perform Get();
+        perform Set(|| { with multiThread() { perform Yield() } });
+        other()
+    },
+    Yield(_: unit) {
+        let other = perform Get();
+        perform Set(continuation);
+        other()
+    }
+}
+
+fn f() {
+    nativePrint("a");
+    perform Yield();
+    nativePrint("c");
+    perform Yield();
+    nativePrint("e");
+}
+
+fn g() {
+    nativePrint("b");
+    perform Yield();
+    nativePrint("d");
+}
+
+fn main() {
+    let threads = with stateHandler() {
+        with multiThread() { f() }
+    };
+    threads(|| { with multiThread() { g() } })
+}

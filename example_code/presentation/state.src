@@ -1,0 +1,27 @@
+//Energema - 15/04/2024 - State
+
+effect Get: unit -> i32;
+effect Set: i32;
+
+handler stateHandler() -> fn(i32) -> i32 {
+    return(y: i32) { |_| { y } },
+    Get(_: unit) {
+        |state| { (continuation(state))(state) }
+    },
+    Set(value: i32) {
+        |_| { (continuation())(value) }
+    },
+}
+
+fn f() {
+    let x = perform Get();
+    perform Set(2);
+    let y = perform Get();
+    perform Set(x * y);
+    perform Get()
+}
+
+fn main() {
+    let res = with stateHandler() { f() }(3);
+    nativePrint(res);
+}
